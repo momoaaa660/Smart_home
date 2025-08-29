@@ -1,0 +1,30 @@
+import os
+
+
+class Settings:
+    # 数据库配置
+    DATABASE_URL = "sqlite:///./data/hongmeng.db"
+
+    # 安全配置
+    SECRET_KEY = "hongmeng_super_secret_key_2025_project"
+    ALGORITHM = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7
+
+    # MQTT配置
+    MQTT_BROKER_HOST = "localhost"  # 本地MQTT broker地址
+    MQTT_BROKER_PORT = 1883  # MQTT端口
+    MQTT_USERNAME = ""  # MQTT用户名（可选）
+    MQTT_PASSWORD = ""  # MQTT密码（可选）
+
+    # 应用配置
+    DEBUG = True
+    HOST = "0.0.0.0"
+    PORT = 8000
+
+    # 项目信息
+    PROJECT_NAME = "鸿蒙智能家居API"
+    VERSION = "1.0.0"
+    DESCRIPTION = "基于FastAPI的智能家居后端系统"
+
+
+settings = Settings()
