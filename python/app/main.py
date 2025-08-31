@@ -1,6 +1,6 @@
-# app/main.py
-from fastapi import FastAPI
+from fastapi import FastAPI, WebSocket, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
 import uvicorn
 import sys
 import os
@@ -11,12 +11,11 @@ project_root = os.path.dirname(current_dir)
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from app.api import auth, devices, sensors, scenes, mqtt_devices, ai_chat  # 添加ai_chat
+from app.api import auth, devices, sensors, scenes, mqtt_devices, ai_chat
 from app.config import settings
-from app.database import init_db
+from app.database import init_db, get_db
 from app.services.mqtt_service import mqtt_service
-from app.services.ai_service import ai_service  # 添加ai_service
-
+from app.services.ai_service import ai_service
 
 
 init_db()
@@ -44,6 +43,12 @@ app.include_router(scenes.router, prefix="/api/v1/scenes", tags=["场景管理"]
 app.include_router(mqtt_devices.router, prefix="/api/v1/mqtt", tags=["MQTT设备"])
 app.include_router(ai_chat.router, prefix="/api/v1/ai", tags=["AI智能助手"])  # 新增AI路由
 
+@app.websocket("/ws/chat")
+async def root_websocket_chat(websocket: WebSocket, db: Session = Depends(get_db)):
+    """根级别WebSocket路由 - 匹配前端连接地址"""
+    from app.api.ai_chat import websocket_ai_chat
+    await websocket_ai_chat(websocket, db)
+
 @app.on_event("startup")
 async def startup_event():
     """应用启动事件"""
@@ -51,6 +56,7 @@ async def startup_event():
     print("📡 Starting MQTT service...")
     mqtt_service.start()
     print("🤖 AI Assistant service initialized")
+    print("🔌 WebSocket service ready")  # 新增
     print(f"📚 API docs: http://{settings.HOST}:{settings.PORT}/docs")
     print("=" * 60)
     print("🎯 AI功能特色：")

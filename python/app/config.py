@@ -27,5 +27,13 @@ class Settings:
     VERSION = "1.0.0"
     DESCRIPTION = "基于FastAPI的智能家居后端系统"
 
+    # AI服务配置
+    DASHSCOPE_API_KEY = "sk-3f01d90099574cf1a1d8977f38986561"  # 你的通义千问API Key
+    AI_MODEL = "qwen-plus"
+    AI_TIMEOUT = 30
+
+    # WebSocket配置
+    WEBSOCKET_HEARTBEAT_INTERVAL = 30  # 心跳间隔（秒）
+    MAX_WEBSOCKET_CONNECTIONS = 100  # 最大连接数
 
 settings = Settings()

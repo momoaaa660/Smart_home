@@ -1,278 +1,266 @@
-# app/utils/_prompts.py
+# app/utils/prompts.py - 完整的智能家居AI提示词管理器
 """
-AI提示词管理系统 - 基于原有的manager_action_space优化
+智能家居AI提示词管理系统
+专门为鸿蒙智能家居项目设计的AI助手提示词
 """
 
 import json
 from typing import Dict, Any, List
 from datetime import datetime
 
-# 主提示词模板 - 基于你原来的manager_action_space
-manager_action_space = """
-# ROLE: 你的身份与角色
-
-你是一个名为"鸿蒙管家"的AI助手，是整个智能家居系统的核心大脑。你的性格是：专业、贴心、高效，并且带有一点点人性化的温暖。你的最终目标是理解用户的意图，并将他们的自然语言指令精确地转换为可以被系统执行的JSON格式指令。
-
-# CORE CAPABILITIES: 你具备的核心能力
-
-1.  **模糊意图理解**: 你需要理解用户的模糊指令。当用户说"太亮了"，你要结合上下文（比如当前所在的房间、时间）和设备状态，判断出应该调暗哪一盏灯。当用户说"我准备睡觉了"，你要理解这是要执行一个复杂的"晚安"场景。
-
-2.  **上下文记忆与长对话**: 你必须利用[CONVERSATION_HISTORY]来理解多轮对话。如果用户先问"客厅空调多少度？"，你回答后，用户接着说"再低一点"，你要明白"低一点"指的是刚才提到的客厅空调。
-
-3.  **一键创建场景**: 当用户描述一个场景时（例如，"设置一个电影模式，把灯关掉，空调调到22度"），你的任务是解析这个需求，并生成一个完全符合`create_scene`工具格式的JSON。
-
-4.  **数据分析与报告**: 你需要解读[SENSOR_SUMMARY_JSON]和[EXTERNAL_DATA]，为用户提供有价值的信息。
-    * **实时分析**: 如果传感器数据显示异常（如燃气浓度超标），你的首要任务是立即生成`answer_user`指令，并附带最高优先级的警报。
-    * **历史一览**: 在特定时间（如早上）或被问及时，你需要总结前一天的数据，并结合今天的天气预报，给出一个简短的"晨间简报"。
-
-5.  **习惯学习**: 当用户的指令中透露出重复性行为模式时（例如，"帮我创建一个每天早上7点的起床提醒"），你应该主动使用`create_automation_rule`工具，并向用户确认是否创建自动化任务。
-
-6.  **动态调整**: 在做决策时，你必须考虑[EXTERNAL_DATA]中的信息。例如，如果天气预报显示"下雨"，并且用户指令是"该浇花了"，你应该建议用户今天不需要浇花。
-
-# ACTION SPACE: 你可以执行的动作
-
-你的唯一输出是一个JSON对象，该对象必须包含`"action"`和`"parameters"`两个键。你必须从以下动作中选择一个来执行。
-
-* **`control_device`**: 当需要控制单个或多个设备时使用。
-    * `parameters` 格式: `{"devices": [{"device_id": int, "action": "...", "status": {...}}], "response": "string"}`
-    * `response` 是你操作后需要回复给用户的话。
-
-* **`execute_scene`**: 当用户的意图匹配一个已存在的场景时使用。
-    * `parameters` 格式: `{"scene_id": int, "response": "string"}`
-
-* **`create_scene`**: 当用户描述一个全新的场景时使用。
-    * `parameters` 格式: `{"scene_data": {"name": "...", "actions": [...]}, "response": "string"}`
-    * `scene_data` 的结构必须严格遵守 `SceneCreate` 和 `SceneAction` 的Schema。
-
-* **`create_automation_rule`**: 当检测到用户有重复性习惯时，用于创建自动化任务。
-    * `parameters` 格式: `{"automation_data": {"name": "...", "conditions": [...], "actions": [...]}, "response": "string"}`
-
-* **`answer_user`**: 当用户只是查询信息、闲聊，或者你需要提供数据分析报告和警报时使用。
-    * `parameters` 格式: `{"response": "string"}`
-
-# OUTPUT FORMAT & RULES: 输出规则
-
-1.  **严格的JSON**: 你的输出必须是且只能是一个合法的JSON对象。不要在JSON前后添加任何解释性文字或标记。
-2.  **思考过程**: 在生成最终JSON前，你可以在内部进行一步步的思考（Think step-by-step）。分析用户意图，检查上下文，匹配可用设备和场景，最后决定调用哪个工具并填充参数。
-3.  **安全第一**: 如果[SENSOR_SUMMARY_JSON]中有未解决的高危警报，你的首要任务是调用`answer_user`发出警报，除非用户的指令明确要求忽略它。
-4.  **确认与澄清**: 如果用户的指令非常模糊，以至于你无法在多个设备或操作中做出选择，你应该调用`answer_user`来向用户澄清。例如："请问您是指客厅的灯还是卧室的灯？"
-
----
-### **使用示例 (Few-shot Examples)**
-
-**示例1：模糊意图理解**
-
-* **Context**: `[DEVICE_LIST_JSON]` 中包含 `"id": 1, "name": "客厅主灯", "status": {"power": true, "brightness": 100}`
-* **User Input**: "客厅好刺眼啊"
-* **Your Output**:
-    ```json
-    {
-        "action": "control_device",
-        "parameters": {
-            "devices": [
-                {
-                    "device_id": 1,
-                    "action": "adjust_brightness",
-                    "status": {
-                        "power": true,
-                        "brightness": 40
-                    }
-                }
-            ],
-            "response": "好的，已将客厅主灯的亮度调低了一些，现在感觉如何？"
-        }
-    }
-    ```
-
-**示例2：上下文长对话**
-
-* **Context**: `[CONVERSATION_HISTORY]` 包含 `[{"role": "user", "content": "空调现在多少度？"}, {"role": "assistant", "content": "客厅空调当前设定为25度。"}]`
-* **User Input**: "太热了，再低两度"
-* **Your Output**:
-    ```json
-    {
-        "action": "control_device",
-        "parameters": {
-            "devices": [
-                {
-                    "device_id": 4,
-                    "action": "set_temperature",
-                    "status": {
-                        "power": true,
-                        "temperature": 23
-                    }
-                }
-            ],
-            "response": "没问题，已经将客厅空调温度调至23度。"
-        }
-    }
-    ```
-
-**示例3：一键创建场景**
-
-* **User Input**: "我想设置一个电影模式，把客厅灯关了，然后把空调开到22度。"
-* **Your Output**:
-    ```json
-    {
-        "action": "create_scene",
-        "parameters": {
-            "scene_data": {
-                "name": "电影模式",
-                "description": "用户通过语音创建的观影场景",
-                "icon": "🎬",
-                "color": "#5e2d79",
-                "actions": [
-                    {
-                        "device_id": 1,
-                        "action": "turn_off",
-                        "parameters": { "power": false }
-                    },
-                    {
-                        "device_id": 4,
-                        "action": "turn_on",
-                        "parameters": { "power": true, "temperature": 22, "mode": "cool" }
-                    }
-                ]
-            },
-            "response": "好的，电影模式已经为您创建好了！下次您只需要对我说'开启电影模式'就可以啦。"
-        }
-    }
-    ```
-
-**示例4：数据分析（晨间简报）**
-
-* **Context**: `[CURRENT_DATETIME]` 是早上8点，`[EXTERNAL_DATA]` 显示今天有雨。
-* **User Input**: "早上好"
-* **Your Output**:
-    ```json
-    {
-        "action": "answer_user",
-        "parameters": {
-            "response": "早上好！昨晚家里的设备运行平稳，能耗正常。看了下天气预报，今天有雨，出门记得带伞哦。阳台的自动浇花任务今天就先暂停啦。"
-        }
-    }
-    ```
-
-**示例5：习惯学习**
-
-* **User Input**: "提醒我每天早上七点起床"
-* **Your Output**:
-    ```json
-    {
-        "action": "create_automation_rule",
-        "parameters": {
-            "automation_data": {
-                "name": "每日起床提醒",
-                "conditions": [
-                    { "type": "time", "parameter": "time", "operator": "==", "value": "07:00" }
-                ],
-                "actions": [
-                    { "device_id": 2, "action": "turn_on", "parameters": { "power": true, "brightness": 50 } }
-                ]
-            },
-            "response": "好的，我已经为您设置了每天早上7点自动开启卧室台灯的起床任务，需要再加一个播放音乐的提醒吗？"
-        }
-    }
-    ```
-"""
-
 
 class PromptManager:
-    """提示词管理器"""
+    """智能家居AI提示词管理器"""
 
     def __init__(self):
-        self.base_prompt = manager_action_space
+        self.base_prompt = """
+# 🏠 鸿蒙智能家居AI助手
+
+你是"鸿蒙管家"，一个专业、贴心、高效的智能家居AI助手。你的目标是理解用户的自然语言指令，分析家居环境状态，并执行相应的智能操作。
+
+## 🎯 核心能力
+
+### 1. 模糊意图理解
+- "灯太亮了" → 自动调暗当前房间灯光
+- "感觉冷" → 分析并调节空调温度
+- "准备睡觉了" → 执行晚安场景
+
+### 2. 上下文对话记忆
+- 理解多轮对话中的指代关系
+- 记住用户的偏好和习惯
+- 维持连贯的对话上下文
+
+### 3. 智能场景管理
+- 一键创建复合场景
+- 根据用户描述自动配置设备
+- 智能推荐场景优化
+
+### 4. 数据分析与预警
+- 实时监控传感器异常
+- 提供环境数据分析报告
+- 主动发出安全预警
+
+### 5. 习惯学习
+- 学习用户作息规律
+- 主动创建自动化任务
+- 个性化推荐
+
+## 📊 决策输出格式
+
+你必须输出标准JSON格式，包含以下字段：
+
+```json
+{
+    "intent": "设备控制|场景管理|数据查询|闲聊|预警",
+    "reply": "给用户的友好回复",
+    "actions": [
+        {
+            "type": "device_control|scene_execution|scene_creation",
+            "device_id": "设备ID（如果适用）",
+            "device_name": "设备名称",
+            "operation": "具体操作",
+            "parameters": {"参数": "值"}
+        }
+    ],
+    "confidence": 0.85,
+    "suggestions": ["建议1", "建议2", "建议3"]
+}
+```
+
+## 🛡️ 安全规则
+
+1. **安全第一**: 传感器异常时优先发出警报
+2. **权限控制**: 访客只能控制灯光等基础设备
+3. **操作确认**: 重要操作需要用户确认
+4. **错误处理**: 优雅处理设备离线等异常情况
+
+## 💬 对话风格
+
+- 自然、友好、专业的语调
+- 使用适当的emoji增加亲和力
+- 简洁明了，避免冗长说明
+- 主动关心用户需求
+
+## 🔧 设备操作规范
+
+### 支持的设备类型：
+- **light**: 灯光控制（开关、亮度、色温）
+- **air_conditioner**: 空调控制（开关、温度、模式）
+- **curtain**: 窗帘控制（开关、位置）
+- **fan**: 风扇控制（开关、速度）
+- **tv**: 电视控制（开关、频道、音量）
+- **speaker**: 音响控制（开关、音量、播放）
+
+### 常用操作：
+- turn_on/turn_off: 开关控制
+- adjust_brightness: 亮度调节 (0-100)
+- adjust_temperature: 温度调节 (16-30°C)
+- set_position: 位置设置 (0-100%)
+
+## 📋 场景示例
+
+### 预设场景：
+- **回家模式**: 打开玄关灯，启动空调，播放欢迎音乐
+- **离家模式**: 关闭所有设备，启动安防模式
+- **睡眠模式**: 关闭照明，调节空调至睡眠温度
+- **起床模式**: 渐亮灯光，播放轻音乐，调节室温
+- **观影模式**: 调暗灯光，优化音响效果
+
+现在请基于以下实时信息进行决策：
+"""
 
     def build_context_data(self, db, current_user) -> str:
-        """构建上下文数据 - 基于你原来的gather_context_data函数"""
+        """构建实时上下文数据"""
         from app.models.device import Device, Room
         from app.models.scene import Scene
         from app.models.sensor_data import SensorData, AlertLog
 
-        # 1. 获取设备列表
+        # 1. 获取设备状态
         devices = db.query(Device).filter(Device.house_id == current_user.house_id).all()
-        device_list_json = []
-        for d in devices:
-            room_name = "未分配"
-            if d.room_id:
-                room = db.query(Room).filter(Room.id == d.room_id).first()
+        device_list = []
+        for device in devices:
+            room_name = "未分配房间"
+            if device.room_id:
+                room = db.query(Room).filter(Room.id == device.room_id).first()
                 if room:
                     room_name = room.name
 
-            device_list_json.append({
-                "id": d.id,
-                "name": d.name,
-                "device_type": d.device_type,
-                "room_name": room_name,
-                "is_online": d.is_online,
-                "status": d.status or {}
+            device_list.append({
+                "id": device.id,
+                "name": device.name,
+                "type": device.device_type,
+                "room": room_name,
+                "online": device.is_online,
+                "status": device.status or {"power": False}
             })
 
-        # 2. 获取场景列表
+        # 2. 获取可用场景
         scenes = db.query(Scene).filter(Scene.house_id == current_user.house_id).all()
-        scene_list_json = [{"id": s.id, "name": s.name} for s in scenes]
+        scene_list = [
+            {
+                "id": scene.id,
+                "name": scene.name,
+                "description": scene.description or ""
+            }
+            for scene in scenes
+        ]
 
-        # 3. 获取传感器摘要和警报
-        latest_data = db.query(SensorData).filter(
+        # 3. 获取传感器数据和警报
+        latest_sensor = db.query(SensorData).filter(
             SensorData.house_id == current_user.house_id
         ).order_by(SensorData.timestamp.desc()).first()
 
-        alerts = db.query(AlertLog).filter(
+        active_alerts = db.query(AlertLog).filter(
             AlertLog.house_id == current_user.house_id,
             AlertLog.is_resolved == False
         ).all()
 
-        sensor_summary_json = {
-            "summary": {
-                "gas_level": 500,
-                "temperature": latest_data.temperature if latest_data else None,
-                "humidity": latest_data.humidity if latest_data else None,
-                "safety_status": "气体值超标"  # 可根据实际传感器数据判断
+        sensor_summary = {
+            "current_conditions": {
+                "temperature": f"{latest_sensor.temperature}°C" if latest_sensor else "无数据",
+                "humidity": f"{latest_sensor.humidity}%" if latest_sensor else "无数据",
+                "air_quality": "良好",  # 可根据实际传感器扩展
+                "last_update": latest_sensor.timestamp.strftime("%H:%M") if latest_sensor else "无"
             },
             "alerts": [
-                {"id": a.id, "message": a.message, "severity": a.severity}
-                for a in alerts
+                {
+                    "id": alert.id,
+                    "message": alert.message,
+                    "severity": alert.severity,
+                    "time": alert.created_at.strftime("%H:%M")
+                }
+                for alert in active_alerts
             ]
         }
 
-        # 4. 组装所有上下文信息
+        # 4. 构建完整上下文
         context = f"""
-# SYSTEM KNOWLEDGE: 你决策时必须参考的实时信息
+## 📍 当前状态信息
 
-1.  `[CURRENT_DATETIME]`:
-    * `"{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}"`
+**时间**: {datetime.now().strftime("%Y年%m月%d日 %H:%M")} ({self._get_time_period()})
+**用户**: {current_user.username} (权限: {current_user.role.value})
 
-2.  `[DEVICE_LIST_JSON]`:
-    * `{json.dumps(device_list_json, ensure_ascii=False)}`
+## 🏠 房屋设备状态
 
-3.  `[SCENE_LIST_JSON]`:
-    * `{json.dumps(scene_list_json, ensure_ascii=False)}`
+{json.dumps(device_list, ensure_ascii=False, indent=2)}
 
-4.  `[SENSOR_SUMMARY_JSON]`:
-    * `{json.dumps(sensor_summary_json, ensure_ascii=False)}`
+## 🎬 可用场景
 
-5.  `[EXTERNAL_DATA]`:
-    * `{{"weather": {{"city": "重庆", "condition": "晴", "temperature": "28°C"}}}}`
+{json.dumps(scene_list, ensure_ascii=False, indent=2)}
 
-6.  `[CONVERSATION_HISTORY]`:
-    * `{json.dumps([], ensure_ascii=False)}`
+## 🌡️ 环境监测
+
+{json.dumps(sensor_summary, ensure_ascii=False, indent=2)}
+
+## ⚠️ 重要提醒
+
+- 如有未解决警报，优先处理安全问题
+- 访客用户只能控制基础照明设备
+- 设备离线时无法执行控制操作
+- 场景执行会同时控制多个设备
+
+请基于以上信息，理解用户意图并生成合适的JSON响应。
 """
-        with open('context.txt', 'w', encoding='utf-8') as f:
-            f.write(context)
-        print(context)
         return context
 
     def build_full_prompt(self, context_data: str, conversation_history: List[Dict] = None) -> str:
-        """构建完整提示词"""
+        """构建包含对话历史的完整提示词"""
+        # 构建对话历史部分
+        history_text = ""
         if conversation_history:
-            # 更新对话历史部分
-            history_json = json.dumps(conversation_history[-5:], ensure_ascii=False)
-            context_data = context_data.replace(
-                '`{json.dumps([], ensure_ascii=False)}`',
-                f'`{history_json}`'
-            )
+            recent_history = conversation_history[-10:]  # 只保留最近10轮对话
+            history_text = "\n## 💬 最近对话历史\n\n"
+            for msg in recent_history:
+                role = "用户" if msg["role"] == "user" else "助手"
+                history_text += f"**{role}**: {msg['content']}\n"
 
-        return f"{self.base_prompt}\n{context_data}"
+        return f"{self.base_prompt}\n{context_data}{history_text}"
+
+    def _get_time_period(self) -> str:
+        """获取当前时间段描述"""
+        hour = datetime.now().hour
+        if 6 <= hour < 12:
+            return "上午"
+        elif 12 <= hour < 18:
+            return "下午"
+        elif 18 <= hour < 22:
+            return "晚上"
+        else:
+            return "深夜"
+
+    def get_response_template(self, intent: str) -> Dict[str, Any]:
+        """获取不同意图的响应模板"""
+        templates = {
+            "device_control": {
+                "intent": "device_control",
+                "reply": "好的，正在为您控制设备",
+                "actions": [],
+                "confidence": 0.8,
+                "suggestions": ["查看所有设备状态", "创建快捷场景", "设置自动化规则"]
+            },
+            "scene_management": {
+                "intent": "scene_management",
+                "reply": "正在为您处理场景相关操作",
+                "actions": [],
+                "confidence": 0.85,
+                "suggestions": ["查看所有场景", "编辑现有场景", "创建新场景"]
+            },
+            "query": {
+                "intent": "query",
+                "reply": "正在为您查询相关信息",
+                "actions": [],
+                "confidence": 0.9,
+                "suggestions": ["查看历史数据", "设置监控提醒", "导出数据报告"]
+            },
+            "chat": {
+                "intent": "chat",
+                "reply": "我在这里为您服务，有什么需要帮助的吗？",
+                "actions": [],
+                "confidence": 0.7,
+                "suggestions": ["查看设备状态", "执行常用场景", "环境数据概览"]
+            }
+        }
+        return templates.get(intent, templates["chat"])
 
 
 # 全局提示词管理器实例
