@@ -1,0 +1,20 @@
+
+# SYSTEM KNOWLEDGE: 你决策时必须参考的实时信息
+
+1.  `[CURRENT_DATETIME]`:
+    * `"2025-08-31 19:31:28"`
+
+2.  `[DEVICE_LIST_JSON]`:
+    * `[{"id": 1, "name": "客厅主灯", "device_type": "light", "room_name": "客厅", "is_online": true, "status": {"power": true, "brightness": 80, "color": "#FFFFFF"}}, {"id": 2, "name": "卧室台灯", "device_type": "light", "room_name": "卧室", "is_online": true, "status": {"power": false}}, {"id": 3, "name": "厨房照明", "device_type": "light", "room_name": "厨房", "is_online": true, "status": {"power": false, "brightness": 90}}, {"id": 4, "name": "客厅空调", "device_type": "airconditioner", "room_name": "客厅", "is_online": true, "status": {"power": true, "temperature": 25, "mode": "cool"}}, {"id": 5, "name": "厨房油烟机", "device_type": "fan", "room_name": "厨房", "is_online": true, "status": {"power": false, "speed": 1}}, {"id": 6, "name": "阳台自动浇水器", "device_type": "pump", "room_name": "阳台", "is_online": true, "status": {"power": false, "flow_rate": 50}}, {"id": 7, "name": "客厅环境传感器", "device_type": "sensor", "room_name": "客厅", "is_online": true, "status": {"online": true, "battery": 85}}, {"id": 8, "name": "厨房烟雾传感器", "device_type": "sensor", "room_name": "厨房", "is_online": true, "status": {"online": true, "battery": 92}}, {"id": 9, "name": "阳台植物传感器", "device_type": "sensor", "room_name": "阳台", "is_online": true, "status": {"online": true, "battery": 78}}]`
+
+3.  `[SCENE_LIST_JSON]`:
+    * `[{"id": 1, "name": "回家模式"}, {"id": 2, "name": "睡眠模式"}]`
+
+4.  `[SENSOR_SUMMARY_JSON]`:
+    * `{"summary": {"gas_level": 500, "temperature": null, "humidity": null, "safety_status": "气体值超标"}, "alerts": []}`
+
+5.  `[EXTERNAL_DATA]`:
+    * `{"weather": {"city": "重庆", "condition": "晴", "temperature": "28°C"}}`
+
+6.  `[CONVERSATION_HISTORY]`:
+    * `[]`

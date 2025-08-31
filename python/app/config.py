@@ -5,6 +5,7 @@ class Settings:
     # 数据库配置
     DATABASE_URL = "sqlite:///./data/hongmeng.db"
 
+    DASHSCOPE_API_KEY = "sk-3f01d90099574cf1a1d8977f38986561"
     # 安全配置
     SECRET_KEY = "hongmeng_super_secret_key_2025_project"
     ALGORITHM = "HS256"
