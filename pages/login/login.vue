@@ -48,61 +48,38 @@
 </template>
 
 <script>
-	export default {
-		data() {
-			return {
-				// 新增后端API地址
-				apiBaseUrl: 'http://127.0.0.1:8000', // 请替换为您的电脑IP
-				username: '',
-				password: ''
-			}
-		},
-		methods: {
-			login() {
-				if (!this.username || !this.password) {
-					uni.showToast({ title: "请输入账号密码", icon: "none" });
-					return;
-				}
-				
-				// 调用后端登录API
-				// 注意：FastAPI的OAuth2PasswordRequestForm需要form-data格式
-				uni.request({
-					url: `${this.apiBaseUrl}/api/v1/auth/login`,
-					method: 'POST',
-					header: {
-						'Content-Type': 'application/x-www-form-urlencoded'
-					},
-					data: {
-						username: this.username, // 对应后端的form_data.username
-						password: this.password  // 对应后端的form_data.password
-					},
-					success: (res) => {
-						if (res.statusCode === 200 && res.data.access_token) {
-							// 【核心】: 登录成功，保存Token到本地存储
-							uni.setStorageSync("token", res.data.access_token);
-							
-							uni.showToast({ title: '登录成功', icon: 'success' });
-
-							// 跳转到首页
-							setTimeout(() => {
-								uni.reLaunch({ url: "/pages/index/index" });
-							}, 1000);
-
-						} else {
-							const detail = res.data.detail || '登录失败，请检查账号密码';
-							uni.showToast({ title: detail, icon: 'none' });
-						}
-					},
-					fail: (err) => {
-						uni.showToast({ title: '网络请求失败', icon: 'none' });
-					}
-				});
-			},
-			goRegister() {
-				uni.navigateTo({ url: "/pages/register/register" });
-			}
-		}
-	}
+export default {
+  data() {
+    return {
+      username: '',
+      password: ''
+    }
+  },
+  methods: {
+    login() {
+      if (!this.username || !this.password) {
+        uni.showToast({ title: "请输入账号密码", icon: "none" });
+        return;
+      }
+      const users = uni.getStorageSync("users") || [];
+      const user = users.find(u => u.username === this.username);
+      if (!user) {
+        uni.showToast({ title: "用户不存在", icon: "none" });
+        return;
+      }
+      if (user.password !== this.password) {
+        uni.showToast({ title: "密码错误", icon: "none" });
+        return;
+      }
+      uni.setStorageSync("isLogin", true);
+      uni.setStorageSync("currentUser", user);
+      uni.reLaunch({ url: "/pages/index/index" });
+    },
+    goRegister() {
+      uni.navigateTo({ url: "/pages/register/register" });
+    }
+  }
+}
 </script>
 
 <style scoped lang="scss">

@@ -99,170 +99,341 @@
 </template>
 
 <script>
+	// 导入位于相对路径"../../components/statement.vue"的statement组件
 	import statement from "../../components/statement.vue";
+	// 从marked库中导入marked函数，用于将Markdown文本转换为HTML
 	import { marked } from "marked";
-
+	// 导出一个Vue组件对象
 	export default {
+		// 注册导入的statement组件，使其可在模板中使用
 		components: {
 			statement
 		},
+		// 定义组件的数据对象
 		data() {
+			// 开始返回数据对象
 			return {
-				apiBaseUrl: 'http://192.168.20.234:8000', // 开发时请务必替换为您的电脑IP地址
-				socketTask: null,
-				isConnected: false,
-				
-				showLoading: false, // 控制“响应中”的加载动画
+				// 用户头像图片URL，初始为空字符串
+				userImg: '',
+				// 默认用户头像图片路径
+				nullImg: '../../static/icon/user.png',
+				// 控制是否显示加载状态的标志位
+				showLoading: false,
+				// 预设的问题请求数组
+				postRequest: [
+					{ id: 1, text: '把空调温度调低一点' },
+					{ id: 2, text: '打开卧室灯' },
+					{ id: 3, text: '显示当前气温' }
+				],
+				// 存储聊天记录的数组
 				chatList: [],
+				// 存储用户输入的问题
 				userQuesion: '',
+				// 存储机器人的回答
+				robotAnswer: '',
+				// 存储当前时间
 				currentDate: '',
-				postRequest: [{
-					id: 1,
-					text: '把空调温度调低一点'
-				}, {
-					id: 2,
-					text: '打开卧室灯'
-				}, {
-					id: 3,
-					text: '显示当前气温'
-				}],
+				// 存储DOM元素的高度
+				domHeight: 0,
+				// 初始化与AI对话的消息数组，第一条为系统角色设定消息
+				messages: [
+					{
+						role: "system",
+						content: "你是一名专业的智能家居助手，专注于帮助用户控制家居设备（如灯光、空调、热水器）、查询设备状态和执行场景模式。当用户询问与智能家居无关的问题时，礼貌拒绝并引导至相关功能。"
+					}
+				],
+				// 超时定时器ID
+				timeoutTimer: null,
+				// 响应超时时间（毫秒），默认30秒
+				responseTimeout: 30000,
+				// 是否显示超时错误信息
+				showTimeoutError: false,
+				// 是否显示连接错误信息
+				showConnectionError: false,
+				// WebSocket实例
+				socketTask: null,
+				// 连接状态
+				connected: false,
+				// 聊天历史记录
+				history: []
 			};
 		},
-		onLoad() {
-			this.initWebSocket();
+		// 页面加载生命周期函数
+		onLoad(option) {
+			// 如果没有传入questionText参数则直接返回
+			if (!option.questionText) return;
+			this.userQuesion = option.questionText;
+			// 将传入的参数questionText赋值给userQuesion
+			this.sendMsg();
 		},
-		onUnload() {
-			this.closeWebSocket();
-		},
+		// 定义侦听器
 		watch: {
-			// 每次chatList变化都滚动到底部
+			// 监听chatList数组长度的变化
+			'chatList.length': {
+				// 立即执行且深度监听
+				immediate: true,
+				deep: true,
+				// 定义处理函数
+				handler(newValue, oldValue) {
+					// 当chatList长度变化时，自动滚动到底部
+					if (newValue) {
+						this.scrollToBottom();
+					}
+				}
+			},
+			// 监听chatList内容变化（用于流式更新时的滚动）
 			chatList: {
-				handler() { this.scrollToBottom(); },
-				deep: true
+				deep: true,
+				handler(newList, oldList) {
+					// 当消息内容更新时，延迟滚动确保DOM已更新
+					this.$nextTick(() => {
+						this.scrollToBottom();
+					});
+				}
 			}
 		},
-		mounted() {
-			// ... (mounted中其他代码不变)
+		// 组件挂载完成生命周期函数
+		mounted() { 
+			// 通过refs打开居中显示的dialog组件
+			this.$refs.dialog.open('center');
+			// 获取当前时间并格式化为HH:MM格式
+			let myDate = new Date();
+			this.currentDate = (myDate.getHours() + '').padStart(2, '0') + ':' + (myDate.getMinutes() + '').padStart(2, '0');
+			// 初始化WebSocket连接
+			this.initSocket();
+			
+			// 初始滚动到底部
+			this.$nextTick(() => {
+				this.scrollToBottom();
+			});
 		},
+		// 页面卸载前关闭WebSocket连接
+		beforeUnmount() {
+			if (this.socketTask) {
+				this.socketTask.close();
+			}
+		},
+		// 定义组件方法
 		methods: {
-			initWebSocket() {
-				const token = uni.getStorageSync("token");
-				if (!token) {
-					uni.showToast({ title: '请先登录', icon: 'none' });
-					return;
-				}
-				// 将 http:// 替换为 ws://
-				const wsUrl = `${this.apiBaseUrl.replace('http', 'ws')}/api/v1/ai/ws/chat?token=${token}`;
+			// 自动滚动到页面底部 - 修改为适配绝对定位的聊天区域
+			scrollToBottom() {
+				this.$nextTick(() => {
+					// 获取聊天区域DOM元素并滚动到底部
+					const query = uni.createSelectorQuery().in(this);
+					query.select('.chat_area').boundingClientRect().exec((res) => {
+						if (res[0]) {
+							// 使用scrollIntoView滚动到聊天区域底部
+							setTimeout(() => {
+								try {
+									const chatArea = document.querySelector('.chat_area');
+									if (chatArea) {
+										chatArea.scrollTop = chatArea.scrollHeight;
+									}
+								} catch (e) {
+									// 非web环境的兼容处理
+									uni.createSelectorQuery()
+										.select('.chat_area')
+										.scrollOffset()
+										.exec((res) => {
+											if (res[0]) {
+												const scrollTop = res[0].scrollHeight - res[0].clientHeight;
+												if (scrollTop > 0) {
+													// 使用uni.pageScrollTo在非web环境中滚动
+													uni.pageScrollTo({
+														scrollTop: scrollTop,
+														duration: 300,
+														selector: '.chat_area'
+													});
+												}
+											}
+										});
+								}
+							}, 100);
+						}
+					});
+				});
+			},
+			
+			htmlContent(content) { //转换为markdown 格式显示
+				return marked(content);
+			},
+			// 打开使用说明对话框
+			exemptStatement() {
+				this.$refs.dialog.open('center');
+			},
+			// 点击预设问题时调用，发送对应文本
+			tapQuestion(item) {
+				this.wssend(item.text); // 修改为调用正确的websocket发送方法
+			},
+			
+			// ----- 使用websocket方法
+			// 建立 WebSocket 连接
+			initSocket() {
+				if (this.socketTask) return;
 
 				this.socketTask = uni.connectSocket({
-					url: wsUrl,
-					success: () => { console.log("WebSocket 开始连接..."); }
+					url: "ws://127.0.0.1:8000/ws/chat",  // 改成你的后端地址
+					success: () => {
+						console.log("WebSocket 初始化成功");
+					}
 				});
 
 				this.socketTask.onOpen(() => {
-					this.isConnected = true;
-					console.log("✅ WebSocket 连接成功");
+					this.connected = true;
+					console.log("WebSocket 已连接");
 				});
 
 				this.socketTask.onMessage((res) => {
-					const data = JSON.parse(res.data);
-					let lastMessage = this.chatList[this.chatList.length - 1];
-
-					// 确保有一个AI的回复消息占位符
-					if (!lastMessage || lastMessage.role !== 'assistant') return;
-
-					switch (data.type) {
-						case 'text':
-							// 核心：流式追加文本
-							lastMessage.content += data.content;
-							break;
-						case 'status':
-							// 显示状态更新，例如“正在解析指令...”
-							lastMessage.content = data.content;
-							break;
-						case 'result':
-							// 显示最终的执行结果
-							lastMessage.content = data.content;
-							break;
-						case 'error':
-							lastMessage.content = `[错误] ${data.content}`;
+					try {
+						const data = JSON.parse(res.data);
+						if (data.token) {
+							// 流式追加 token
+							let lastIndex = this.chatList.length - 1;
+							if (lastIndex >= 0 && this.chatList[lastIndex].role === 'assistant') {
+								this.chatList[lastIndex].content += data.token;
+							}
+							// 收到回复后清除超时定时器和错误状态
+							this.clearResponseTimeout();
+							this.showConnectionError = false; // 清除连接错误状态
+							
+							// 流式更新时自动滚动
+							this.$nextTick(() => {
+								this.scrollToBottom();
+							});
+						} else if (data.event === "DONE") {
+							// 一条完整回答结束，隐藏加载状态和清除超时
 							this.showLoading = false;
-							break;
-						case 'done':
-							// 一次问答结束，隐藏加载动画
-							this.showLoading = false;
-							this.scrollToBottom(); // 确保最终滚动到底部
-							break;
+							this.showTimeoutError = false;
+							this.showConnectionError = false; // 清除连接错误状态
+							this.clearResponseTimeout();
+							let lastIndex = this.chatList.length - 1;
+							if (lastIndex >= 0) {
+								this.chatList[lastIndex].done = true;
+							}
+							// 消息完成时确保滚动到底部
+							this.scrollToBottom();
+						}
+					} catch (e) {
+						console.error("消息解析失败:", e, res.data);
 					}
-				});
-
-				this.socketTask.onError((err) => {
-					this.isConnected = false;
-					this.showLoading = false;
-					console.error("WebSocket 连接发生错误", err);
 				});
 
 				this.socketTask.onClose(() => {
-					this.isConnected = false;
+					this.connected = false;
+					console.log("WebSocket 已关闭");
+				});
+
+				this.socketTask.onError((err) => {
+					console.error("WebSocket 出错:", err);
+					// WebSocket出错时，立即终止"响应中"状态，显示连接错误信息
 					this.showLoading = false;
-					console.log("WebSocket 连接已关闭");
-					// 可以加入断线重连逻辑
+					this.showConnectionError = true;
+					this.clearResponseTimeout();
+					
+					// 3秒后自动隐藏错误信息
+					setTimeout(() => {
+						this.showConnectionError = false;
+					}, 3000);
 				});
 			},
 
-			closeWebSocket() {
-				if (this.socketTask) {
-					this.socketTask.close();
+			// 清除响应超时定时器
+			clearResponseTimeout() {
+				if (this.timeoutTimer) {
+					clearTimeout(this.timeoutTimer);
+					this.timeoutTimer = null;
 				}
 			},
 			
-			sendMsg() {
-				if (!this.userQuesion.trim()) return;
+			// 设置响应超时定时器
+			setResponseTimeout() {
+				this.clearResponseTimeout(); // 先清除之前的定时器
+				this.timeoutTimer = setTimeout(() => {
+					// 超时后隐藏加载状态，显示错误信息
+					this.showLoading = false;
+					this.showTimeoutError = true;
+					console.log('服务器响应超时');
+					
+					// 滚动确保超时错误信息可见
+					this.$nextTick(() => {
+						this.scrollToBottom();
+					});
+					
+					// 3秒后自动隐藏错误信息
+					setTimeout(() => {
+						this.showTimeoutError = false;
+					}, 3000);
+				}, this.responseTimeout);
+			},
 
-				if (!this.isConnected) {
-					uni.showToast({ title: '连接已断开，正在尝试重连...', icon: 'none' });
-					this.initWebSocket();
+			// 发送用户输入
+			async wssend(val) {
+				if (!this.connected) {
+					this.initSocket();
+					await new Promise(resolve => setTimeout(resolve, 500)); // 等待连接
+				}
+
+				// 打印当前消息数组并显示加载状态
+				console.log(this.messages);
+				
+				this.showLoading = true;
+				this.showTimeoutError = false; // 重置错误状态
+				this.showConnectionError = false; // 重置连接错误状态
+				
+				// 设置响应超时定时器
+				this.setResponseTimeout();
+				// 创建用户消息对象并添加到聊天列表和消息数组
+				let userMessage = {
+					role: 'user',
+					content: val
+				};
+				this.chatList.push(userMessage);
+				this.messages.push(userMessage);
+
+				// 创建空的助手消息对象并添加到两个数组
+				let assistantMessage = {
+					role: 'assistant',
+					content: ''
+				};
+				this.chatList.push(assistantMessage);
+				this.messages.push(assistantMessage);
+
+				// 立即滚动到底部显示用户消息和"响应中"状态
+				this.$nextTick(() => {
+					this.scrollToBottom();
+				});
+
+				this.socketTask.send({
+					data: JSON.stringify({
+						message: val,
+						history: this.history
+					})
+				});
+
+				// 把用户输入追加到 history 里
+				this.history.push({ role: "user", content: val });
+				this.history.push({ role: "assistant", content: "" }); // 等模型返回后填充
+			},
+			
+			// 发送用户问题并清空输入
+			sendMsg() {
+				if (!this.userQuesion.trim()) {
+					uni.showToast({
+						title: '请输入问题',
+						icon: 'none'
+					});
 					return;
 				}
+				// 调用websocket方法
+				this.wssend(this.userQuesion);
+				this.userQuesion = '';
+				this.robotAnswer = '';
 				
-				// 1. 立即将用户自己的消息推入列表
-				this.chatList.push({
-					role: 'user',
-					content: this.userQuesion
+				// 发送消息后滚动到底部
+				this.$nextTick(() => {
+					this.scrollToBottom();
 				});
-
-				// 2. 立即创建一个空的AI回复占位符
-				this.chatList.push({
-					role: 'assistant',
-					content: '' // 初始为空，等待流式数据填充
-				});
-				
-				// 3. 显示加载状态
-				this.showLoading = true;
-				this.scrollToBottom();
-				
-				// 4. 通过WebSocket发送消息到后端
-				this.socketTask.send({
-					data: this.userQuesion,
-					success: () => {
-						this.userQuesion = ''; // 发送成功后清空输入框
-					},
-					fail: (err) => {
-						uni.showToast({ title: '消息发送失败', icon: 'none'});
-						console.error('WebSocket发送失败', err);
-						this.showLoading = false;
-					}
-				});
-			},
-
-			tapQuestion(item) {
-				this.userQuesion = item.text;
-				this.sendMsg();
-			},
-			htmlContent(content) {
-				return marked(content);
-			},
-			// ... (其他方法如 scrollToBottom, exemptStatement 保持不变)
+			}
 		}
 	};
 </script>
