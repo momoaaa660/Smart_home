@@ -1,6 +1,6 @@
-from fastapi import FastAPI, WebSocket, Depends
+# app/main.py
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.orm import Session
 import uvicorn
 import sys
 import os
@@ -13,10 +13,9 @@ if project_root not in sys.path:
 
 from app.api import auth, devices, sensors, scenes, mqtt_devices, ai_chat
 from app.config import settings
-from app.database import init_db, get_db
+from app.database import init_db
 from app.services.mqtt_service import mqtt_service
 from app.services.ai_service import ai_service
-
 
 init_db()
 
@@ -41,13 +40,7 @@ app.include_router(devices.router, prefix="/api/v1/devices", tags=["设备管理
 app.include_router(sensors.router, prefix="/api/v1/sensors", tags=["传感器数据"])
 app.include_router(scenes.router, prefix="/api/v1/scenes", tags=["场景管理"])
 app.include_router(mqtt_devices.router, prefix="/api/v1/mqtt", tags=["MQTT设备"])
-app.include_router(ai_chat.router, prefix="/api/v1/ai", tags=["AI智能助手"])  # 新增AI路由
-
-@app.websocket("/ws/chat")
-async def root_websocket_chat(websocket: WebSocket, db: Session = Depends(get_db)):
-    """根级别WebSocket路由 - 匹配前端连接地址"""
-    from app.api.ai_chat import websocket_ai_chat
-    await websocket_ai_chat(websocket, db)
+app.include_router(ai_chat.router, prefix="/api/v1/ai", tags=["AI智能助手"])
 
 @app.on_event("startup")
 async def startup_event():
@@ -56,8 +49,8 @@ async def startup_event():
     print("📡 Starting MQTT service...")
     mqtt_service.start()
     print("🤖 AI Assistant service initialized")
-    print("🔌 WebSocket service ready")  # 新增
     print(f"📚 API docs: http://{settings.HOST}:{settings.PORT}/docs")
+    print(f"🔗 WebSocket endpoint: ws://{settings.HOST}:{settings.PORT}/ws/chat")
     print("=" * 60)
     print("🎯 AI功能特色：")
     print("  • 模糊意图理解：'灯太亮了' → 自动调暗亮度")
@@ -82,6 +75,7 @@ async def root():
         "version": settings.VERSION,
         "mqtt_connected": mqtt_service.connected,
         "ai_assistant": "enabled",
+        "websocket_endpoint": f"ws://{settings.HOST}:{settings.PORT}/ws/chat",
         "features": [
             "用户认证管理",
             "设备远程控制",
@@ -105,6 +99,7 @@ async def health_check():
         "database": "sqlite",
         "mqtt_status": "connected" if mqtt_service.connected else "disconnected",
         "ai_assistant": "active",
+        "websocket_available": True,
         "version": settings.VERSION
     }
 
@@ -113,7 +108,7 @@ async def ai_status():
     """AI助手状态检查"""
     return {
         "ai_service": "active",
-        "model": "gpt-3.5-turbo",
+        "model": "qwen-turbo",
         "features": {
             "intent_understanding": True,
             "context_conversation": True,
@@ -124,7 +119,8 @@ async def ai_status():
         },
         "supported_languages": ["中文", "English"],
         "voice_support": True,
-        "conversation_memory": True
+        "conversation_memory": True,
+        "websocket_support": True
     }
 
 if __name__ == "__main__":

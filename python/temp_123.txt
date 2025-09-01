@@ -1,0 +1,63 @@
+```json
+{
+    "action": "answer_user",
+    "parameters": {
+        "response": "您好！我是鸿蒙管家，可以帮您控制家中的智能设备、创建场景以及提供生活建议。有什么我可以帮您的吗？"
+    }
+}
+```
+{
+  "action": "control_device",
+  "parameters": {
+    "devices": [
+      {
+        "device_id": 4,
+        "action": "set_temperature",
+        "status": {
+          "power": true,
+          "temperature": 27,
+          "mode": "heat"
+        }
+      }
+    ],
+    "response": "好的，已经将客厅空调温度调高到27度，现在应该暖和一些了。"
+  }
+}
+{
+    "action": "answer_user",
+    "parameters": {
+        "response": "您好！我是鸿蒙管家，可以帮您控制家中的智能设备，比如灯光、空调等。您有什么需要帮助的吗？"
+    }
+}
+{
+  "action": "control_device",
+  "parameters": {
+    "devices": [
+      {
+        "device_id": 1,
+        "action": "adjust_brightness",
+        "status": {
+          "power": true,
+          "brightness": 100
+        }
+      }
+    ],
+    "response": "好的，已将客厅主灯的亮度调高到最大，现在感觉如何？"
+  }
+}
+{
+  "action": "control_device",
+  "parameters": {
+    "devices": [
+      {
+        "device_id": 1,
+        "action": "adjust_brightness",
+        "status": {
+          "power": true,
+          "brightness": 60
+        }
+      }
+    ],
+    "response": "好的，已将客厅主灯的亮度调低了一些，现在感觉如何？"
+  }
+}
