@@ -57,12 +57,15 @@ export default {
   },
   methods: {
     login() {
+      // 原有校验逻辑保留
       if (!this.username || !this.password) {
         uni.showToast({ title: "请输入账号密码", icon: "none" });
         return;
       }
+      
       const users = uni.getStorageSync("users") || [];
       const user = users.find(u => u.username === this.username);
+      
       if (!user) {
         uni.showToast({ title: "用户不存在", icon: "none" });
         return;
@@ -71,8 +74,14 @@ export default {
         uni.showToast({ title: "密码错误", icon: "none" });
         return;
       }
+      
+      // 正确设置store中的currentUser
+      this.$store.commit('SET_CURRENT_USER', user);
+      
+      // 自动同步含role的用户信息
       uni.setStorageSync("isLogin", true);
       uni.setStorageSync("currentUser", user);
+	  console.log(user);
       uni.reLaunch({ url: "/pages/index/index" });
     },
     goRegister() {
@@ -83,6 +92,7 @@ export default {
 </script>
 
 <style scoped lang="scss">
+/* 原有样式不变，无需修改 */
 .container {
   width: 100%;
   height: 100vh;

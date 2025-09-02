@@ -2,12 +2,13 @@
   <view class="container">
     <view class="header">
       <text class="back" @click="navigateBack">←</text>
-      <text class="title">空调控制</text>
+      <text class="title">{{ airDevice.name }}</text>
     </view>
     
     <view class="content">
       <view class="device-info">
         <image :src="airDevice.on ? airDevice.iconOn : airDevice.iconOff" class="device-img" />
+        <text class="location-icon">⛄</text>
         <text class="device-name">{{ airDevice.name }}</text>
         <switch 
           class="device-switch" 
@@ -71,22 +72,22 @@ export default {
     };
   },
   onLoad(options) {
-    // 获取从主页传递的设备ID
-    this.deviceId = options.deviceId || 'air';
-    // 初始化设备数据
-    this.loadDeviceData();
-    
-    // 监听Vuex中设备数据变化，实现实时同步
-    this.unwatch = this.$store.watch(
-      () => this.$store.getters.getDeviceById(this.deviceId),
-      (newVal) => {
-        if (newVal) {
-          this.airDevice = { ...newVal };
-        }
-      },
-      { deep: true } // 深度监听对象变化
-    );
-  },
+      // 获取从主页传递的设备ID
+      this.deviceId = options.deviceId || 'air';
+      // 初始化设备数据
+      this.loadDeviceData();
+      
+      // 监听Vuex中设备数据变化，实现实时同步
+      this.unwatch = this.$store.watch(
+        () => this.$store.getters.getCurrentUserDeviceById(this.deviceId),
+        (newVal) => {
+          if (newVal) {
+            this.airDevice = { ...newVal };
+          }
+        },
+        { deep: true } // 深度监听对象变化
+      );
+    },
   onUnload() {
     // 移除监听器，避免内存泄漏
     if (this.unwatch) {
@@ -96,7 +97,7 @@ export default {
   methods: {
     // 从Vuex加载设备数据
     loadDeviceData() {
-      const device = this.$store.getters.getDeviceById(this.deviceId);
+      const device = this.$store.getters.getCurrentUserDeviceById(this.deviceId);
       if (device) {
         this.airDevice = { ...device };
       }
@@ -105,20 +106,38 @@ export default {
     navigateBack() {
       uni.navigateBack();
     },
-    // 切换设备开关状态
+    // 切换设备开关状态 - 优化体验：先本地更新再提交状态
     toggleDevice() {
+      // 本地即时更新，提供即时反馈
+      this.airDevice.on = !this.airDevice.on;
+      // 强制更新UI
+      this.$forceUpdate();
+      
+      // 提交到Vuex进行实际状态更新
       this.$store.commit('TOGGLE_DEVICE_ON', this.deviceId);
     },
-    // 调节温度
+    // 调节温度 - 优化体验：先本地更新再提交状态
     adjustTemp(change) {
+      // 本地即时更新，提供即时反馈
       const newTemp = Math.min(Math.max(this.airDevice.temp + change, 16), 30);
-      this.$store.commit('SET_AIR_TEMP', {
-        deviceId: this.deviceId,
-        temp: newTemp
+      this.airDevice.temp = newTemp;
+      // 强制更新UI
+      this.$forceUpdate();
+      
+      // 提交到Vuex进行实际状态更新
+      this.$store.commit('SET_AIR_TEMP', { 
+        deviceId: this.deviceId, 
+        temp: newTemp 
       });
     },
-    // 设置运行模式
+    // 设置运行模式 - 优化体验：先本地更新再提交状态
     setMode(mode) {
+      // 本地即时更新，提供即时反馈
+      this.airDevice.mode = mode;
+      // 强制更新UI
+      this.$forceUpdate();
+      
+      // 提交到Vuex进行实际状态更新
       this.$store.commit('SET_AIR_MODE', {
         deviceId: this.deviceId,
         mode: mode
@@ -162,6 +181,10 @@ export default {
   width: 80rpx;
   height: 80rpx;
   margin-right: 30rpx;
+}
+.location-icon {
+  font-size: 48rpx;
+  margin-right: 20rpx;
 }
 .device-name {
   font-size: 30rpx;

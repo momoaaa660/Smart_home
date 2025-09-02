@@ -2,7 +2,7 @@
   <view class="container">
     <view class="header">
       <text class="back" @click="navigateBack">←</text>
-      <text class="title">{{ lightDevice.name }}（{{ lightDevice.location }}）</text>
+      <text class="title">灯光控制</text>
     </view>
     
     <view class="content">
@@ -47,20 +47,20 @@ export default {
     };
   },
   onLoad(options) {
-    this.deviceId = options.deviceId;
-    this.loadDeviceData();
-    
-    // 监听设备数据变化，实现实时同步
-    this.unwatch = this.$store.watch(
-      () => this.$store.getters.getDeviceById(this.deviceId),
-      (newVal) => {
-        if (newVal) {
-          this.lightDevice = { ...newVal };
-        }
-      },
-      { deep: true }
-    );
-  },
+      this.deviceId = options.deviceId;
+      this.loadDeviceData();
+      
+      // 监听设备数据变化，实现实时同步
+      this.unwatch = this.$store.watch(
+        () => this.$store.getters.getCurrentUserDeviceById(this.deviceId),
+        (newVal) => {
+          if (newVal) {
+            this.lightDevice = { ...newVal };
+          }
+        },
+        { deep: true }
+      );
+    },
   onUnload() {
     if (this.unwatch) {
       this.unwatch();
@@ -68,7 +68,7 @@ export default {
   },
   methods: {
     loadDeviceData() {
-      const device = this.$store.getters.getDeviceById(this.deviceId);
+      const device = this.$store.getters.getCurrentUserDeviceById(this.deviceId);
       if (device) {
         this.lightDevice = { ...device };
       }
@@ -77,7 +77,14 @@ export default {
       uni.navigateBack();
     },
     // 仅保留开关控制，无亮度调节
+    // 切换设备开关状态 - 优化体验：先本地更新再提交状态
     toggleDevice() {
+      // 本地即时更新，提供即时反馈
+      this.lightDevice.on = !this.lightDevice.on;
+      // 强制更新UI
+      this.$forceUpdate();
+      
+      // 提交到Vuex进行实际状态更新
       this.$store.commit('TOGGLE_DEVICE_ON', this.deviceId);
     }
   }

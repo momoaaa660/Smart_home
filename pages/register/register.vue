@@ -67,16 +67,15 @@ export default {
   },
   methods: {
     register() {
+      // 原有校验逻辑保留
       if (!this.username || !this.password || !this.confirmPassword) {
         uni.showToast({ title: "请输入完整信息", icon: "none" });
         return;
       }
-      
       if (this.password.length < 6) {
         uni.showToast({ title: "密码长度不能少于6位", icon: "none" });
         return;
       }
-      
       if (this.password !== this.confirmPassword) {
         uni.showToast({ title: "两次密码不一致", icon: "none" });
         return;
@@ -88,15 +87,24 @@ export default {
         return;
       }
       
+      // 新增：角色分配（第一个用户→管理员，其余→普通用户）
       const newUser = {
         username: this.username,
         password: this.password,
-        registerTime: new Date().toLocaleString()
+        registerTime: new Date().toLocaleString(),
+        role: users.length === 0 ? 'admin' : 'user' // 核心：角色字段
       };
       
       users.push(newUser);
       uni.setStorageSync("users", users);
-      uni.showToast({ title: "注册成功", icon: "success" });
+      
+      // 新增：提示第一个用户成为管理员
+      if (newUser.role === 'admin') {
+        uni.showToast({ title: "注册成功！您是第一个用户，自动成为管理员", icon: "none", duration: 2000 });
+      } else {
+        uni.showToast({ title: "注册成功", icon: "success" });
+      }
+      
       uni.navigateBack();
     },
     goLogin() {
@@ -107,6 +115,7 @@ export default {
 </script>
 
 <style scoped lang="scss">
+/* 原有样式不变，无需修改 */
 .container {
   width: 100%;
   height: 100vh;
@@ -226,4 +235,3 @@ export default {
   text-underline-offset: 4rpx;
 }
 </style>
-

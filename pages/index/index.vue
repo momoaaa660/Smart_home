@@ -1,7 +1,7 @@
 <template>
   <view class="page-container">
     <!-- 带背景的页面（确保背景图正确显示） -->
-    <view class="page" :style="{ 
+    <view class="page" :style="{
       backgroundImage: 'url(/static/img/home_bg.png)', 
       backgroundSize: 'cover',
       backgroundPosition: 'center',
@@ -9,7 +9,12 @@
     }">
       <!-- 顶部标题 -->
       <view class="header">
+        <image src="/static/icon/clear.png" class="refresh-btn" @click="refreshData" />
         <text class="title">CQU Home</text>
+        <view class="message-container" @click="goToMessage">
+          <image src="/static/icon/message.png" class="message-btn" />
+          <text v-if="unreadMessageCount > 0" class="message-badge">{{ unreadMessageCount }}</text>
+        </view>
       </view>
 
       <!-- 场景导航 -->
@@ -23,7 +28,7 @@
         </view>
       </scroll-view>
 
-      <!-- 环境监测测区：紧凑布局，向左并拢 -->
+      <!-- 环境监测区域：紧凑布局，向左并拢 -->
       <view class="status-container">
         <!-- 时间卡片 -->
         <view class="status-card">
@@ -31,7 +36,7 @@
           <text class="status-value">{{ currentTime }}</text>
         </view>
         
-        <!-- 温度卡片（显示整数数） -->
+        <!-- 温度卡片（显示整数） -->
         <view class="status-card">
           <image src="/static/icon/temp.png" class="status-icon" />
           <text class="status-value" :class="environment.tempStatus">{{ Math.round(environment.temp) }}℃</text>
@@ -53,20 +58,21 @@
       </view>
 
       <!-- 设备统计卡片 -->
-      <view class="device-stat-card" @click="goToDeviceManage">
-        <view class="stat-item">
+      <view class="device-stat-card">
+        <view class="stat-item" @click="goToDeviceManage">
           <text class="stat-label">设备数</text>
           <text class="stat-value">{{ currentSceneDeviceCount }}</text>
         </view>
-        <view class="stat-item">
+        <view class="stat-item" @click="goToDeviceManage">
           <text class="stat-label">在线</text>
           <text class="stat-value online">{{ currentSceneOnlineCount }}</text>
         </view>
-        <view class="stat-item">
+        <view class="stat-item" @click="goToDeviceManage">
           <text class="stat-label">已开启</text>
           <text class="stat-value active">{{ currentSceneActiveCount }}</text>
         </view>
-        <image src="/static/icon/arrow-right.png" class="stat-arrow" />
+        <image src="/static/icon/arrow-right.png" class="stat-arrow" @click="goToDeviceManage" />
+        <text class="add-device-btn" @click.stop="showAddDeviceForm">+</text>
       </view>
 
       <!-- 模式模块 -->
@@ -95,31 +101,76 @@
               <image :src="device.on ? device.iconOn : device.iconOff" class="device-icon"/>
               <view class="info" @click="goToDevice(device)">
                 <text class="device-name">{{ device.name }}</text>
-                <text class="device-location">{{ device.location }}</text>
+                <text class="device-location">{{ device.scene }}</text>
+                
+                <!-- 显示设备描述 (灰色字体温度) -->
                 <text class="device-desc">{{ device.online ? device.desc : '设备离线' }}</text>
                 
-                <!-- 空调温度调节控件 -->
-                <view v-if="device.id === 'air' && device.on && device.online" class="temp-controls">
-                  <button class="temp-btn minus" @click.stop="adjustTemperature(-1, device)">-</button>
-                  <text class="current-temp">{{ device.temp }}℃</text>
-                  <button class="temp-btn plus" @click.stop="adjustTemperature(1, device)">+</button>
-                </view>
+                <!-- 对于空调设备在线且开启状态，额外显示温度加减控制 -->
+                <template v-if="device.type === 'air' && device.on && device.online">
+                  <!-- 温度控制 (空调设备) -->
+                  <view class="temp-controls">
+                    <button class="temp-btn minus" @click.stop="adjustTemperature(-1, device)">-</button>
+                    <text class="current-temp">{{ device.temp }}℃</text>
+                    <button class="temp-btn plus" @click.stop="adjustTemperature(1, device)">+</button>
+                  </view>
+                </template>
               </view>
             </view>
             
-            <!-- 右侧开关 -->
-            <switch 
-              class="device-switch" 
-              :checked="device.on" 
-              @change="toggleDevice(device)"
-              :disabled="!device.online"
-            ></switch>
+            <!-- 右侧开关和删除按钮 -->
+      <view class="device-right-controls">
+        <switch 
+          class="device-switch" 
+          :checked="device.on" 
+          @change="toggleDevice(device)"
+          :disabled="!device.online"
+        ></switch>
+        <image src="/static/icon/delete.png" class="delete-btn" @click.stop="deleteDevice(device.id)" />
+      </view>
           </view>
           
           <!-- 底部留白 -->
           <view class="bottom-space"></view>
         </view>
       </scroll-view>
+    </view>
+
+    <!-- 添加设备模态框 - 修复选择器位置过低问题 -->
+    <view v-if="showAddForm" class="modal-overlay" @click="hideAddDeviceForm">
+      <view class="modal-content" @click.stop>
+        <view class="modal-header">
+          <text class="modal-title">添加新设备</text>
+        </view>
+        <view class="modal-body">
+          <view class="form-item">
+            <text class="form-label">设备类型</text>
+            <picker @change="changeDeviceType" :value="deviceTypeIndex" :range="deviceTypes">
+              <view class="picker">
+                {{ deviceTypes[deviceTypeIndex] }}
+              </view>
+            </picker>
+          </view>
+          
+          <view class="form-item">
+            <text class="form-label">设备名称</text>
+            <input class="form-input" v-model="deviceName" placeholder="请输入设备名称" />
+          </view>
+          
+          <view class="form-item">
+            <text class="form-label">场景</text>
+            <picker @change="changeDeviceScene" :value="deviceSceneIndex" :range="deviceScenes">
+              <view class="picker">
+                {{ deviceScenes[deviceSceneIndex] }}
+              </view>
+            </picker>
+          </view>
+        </view>
+        <view class="modal-footer">
+          <button class="btn-cancel" @click="hideAddDeviceForm">取消</button>
+          <button class="btn-confirm" @click="addDevice">确定</button>
+        </view>
+      </view>
     </view>
   </view>
 </template>
@@ -128,127 +179,480 @@
 export default {
   data() {
     return {
+      refreshKey: 0,
       currentScene: "全屋",
       scenes: ["全屋", "客厅", "卧室", "卫生间"],
       modes: ["夜晚", "离家", "回家", "起床"],
       timer: null,
       timeUpdateTimer: null,
-      currentTime: ""
+      messageTimer: null,
+      currentTime: "",
+      // 添加设备相关数据
+      showAddForm: false,
+      deviceTypes: ['灯', '空调', '淋浴'],
+      deviceScenes: ['卧室', '客厅', '卫生间'],
+      deviceTypeIndex: 0,
+      deviceSceneIndex: 0,
+      deviceName: '',
+      
+      // 环境数据
+      environment: {
+        temp: 25.5,
+        humidity: 50,
+        tempStatus: 'normal', // 'low', 'normal', 'high'
+        humidityStatus: 'normal' // 'low', 'normal', 'high'
+      },
+      
+      // API配置
+      API_CONFIG: {
+        BASE_URL: 'https://api.example.com',
+        ENDPOINTS: {
+          GET_MESSAGES: '/messages'
+        },
+        TIMEOUT: 10000
+      }
     };
   },
+  
+  onLoad() {
+    this.updateTime();
+    this.timeUpdateTimer = setInterval(() => {
+      this.updateTime();
+    }, 60000); // 每分钟更新一次时间
+    
+    // 同步环境数据到store
+    this.$store.commit('UPDATE_FULL_ENVIRONMENT', this.environment);
+    
+    // 监听设备状态变化的事件
+    this.$on('refreshDevices', this.refreshData);
+    
+    // 初始化获取消息
+    this.fetchNewMessages();
+    // 每5秒拉取一次新消息
+    this.messageTimer = setInterval(() => {
+      this.fetchNewMessages();
+    }, 5000);
+  },
+  
+  onShow() {
+    // 每次页面显示时自动刷新数据
+    this.refreshData();
+  },
+  
+  onUnload() {
+    if (this.timeUpdateTimer) {
+      clearInterval(this.timeUpdateTimer);
+    }
+    if (this.messageTimer) {
+      clearInterval(this.messageTimer);
+    }
+    // 移除事件监听
+    this.$off('refreshDevices', this.refreshData);
+  },
+  
   computed: {
-    // 从Store获取环境数据
-    environment() {
-      return this.$store.getters.getEnvironment;
-    },
-    // 当前激活模式
     currentMode() {
       return this.$store.getters.getCurrentMode;
     },
-    // 当前场景设备列表
+    
+    // 从store中获取当前用户的设备
     filteredDevices() {
-      return this.$store.getters.getDevicesByScene(this.currentScene);
+      // 添加refreshKey引用以确保每次获取时都重新计算
+      this.refreshKey;
+      if (this.currentScene === '全屋') {
+        return Object.values(this.$store.getters.getCurrentUserDevices);
+      } else {
+        return this.$store.getters.getCurrentUserDevicesByScene(this.currentScene);
+      }
     },
-    // 当前场景设备统计
+    
     currentSceneDeviceCount() {
       return this.filteredDevices.length;
     },
+    
     currentSceneOnlineCount() {
       return this.filteredDevices.filter(device => device.online).length;
     },
+    
     currentSceneActiveCount() {
       return this.filteredDevices.filter(device => device.on && device.online).length;
+    },
+    
+    // 获取未读消息数量
+    unreadMessageCount() {
+      return this.$store.getters.getUnreadMessageCount || 0;
     }
   },
-  onLoad() {
-    // 初始化时间
-    this.updateTime();
-    this.timeUpdateTimer = setInterval(() => this.updateTime(), 60000);
-    
-    // 环境数据更新
-    this.timer = setInterval(() => {
-      const currentEnv = this.$store.getters.getFullEnvironment;
-      const newEnv = {
-        temp: Math.max(20, Math.min(40, currentEnv.temp + (Math.random() - 0.5) * 2)),
-        humidity: Math.max(10, Math.min(90, currentEnv.humidity + (Math.random() - 0.5) * 5)),
-        gasConcentration: Math.max(0, Math.min(10, currentEnv.gasConcentration + (Math.random() - 0.5) * 1)),
-        flameLevel: Math.round(Math.random()),
-        smokeLevel: Math.round(Math.random())
-      };
-      this.$store.commit("UPDATE_FULL_ENVIRONMENT", newEnv);
-    }, 5000);
-  },
-  onUnload() {
-    clearInterval(this.timer);
-    clearInterval(this.timeUpdateTimer);
-  },
+  
   methods: {
-    // 更新时间显示
-    updateTime() {
-      const now = new Date();
-      const hours = this.padZero(now.getHours());
-      const minutes = this.padZero(now.getMinutes());
-      this.currentTime = `${hours}:${minutes}`;
+    activateMode(mode) {
+      // 如果点击的是当前已激活的模式，则取消激活
+      if (mode === this.currentMode) {
+        this.$store.commit('DEACTIVATE_MODE');
+      } else {
+        // 激活对应的模式
+        this.$store.commit('ACTIVATE_MODE', mode);
+      }
     },
-    padZero(num) {
-      return num < 10 ? `0${num}` : num;
+    
+    getTempTip(status) {
+      switch(status) {
+        case 'low':
+          return '偏冷';
+        case 'high':
+          return '偏热';
+        default:
+          return '舒适';
+      }
     },
-    // 空调温度调节
-    adjustTemperature(change, device) {
-      if (!device.online) return;
-      const newTemp = Math.min(Math.max(device.temp + change, 16), 30);
-      this.$store.commit("SET_AIR_TEMP", {
-        deviceId: device.id,
-        temp: newTemp
-      });
+    
+    getHumidityTip(status) {
+      switch(status) {
+        case 'low':
+          return '偏干';
+        case 'high':
+          return '偏湿';
+        default:
+          return '舒适';
+      }
     },
-    // 切换场景
+    
+    goToDeviceManage() {
+      // 跳转到设备管理页面
+      console.log('跳转到设备管理页面');
+    },
+    
+    goToEnvMonitor() {
+      // 跳转到环境监测页面
+      try {
+        uni.navigateTo({
+          url: '/pages/environment/monitor',
+          success: () => {
+            console.log('成功跳转到环境监测页');
+          },
+          fail: (err) => {
+            console.error('环境监测页跳转失败:', err);
+            uni.showToast({
+              title: '跳转失败，请重试',
+              icon: 'none'
+            });
+          }
+        });
+      } catch (error) {
+        console.error('导航异常:', error);
+      }
+    },
+    
     changeScene(scene) {
       this.currentScene = scene;
     },
-    // 切换设备开关
-    toggleDevice(device) {
-      this.$store.commit("TOGGLE_DEVICE_ON", device.id);
+    
+    updateTime() {
+      const now = new Date();
+      const hours = now.getHours().toString().padStart(2, '0');
+      const minutes = now.getMinutes().toString().padStart(2, '0');
+      this.currentTime = `${hours}:${minutes}`;
     },
-    // 跳转到设备详情页
-    goToDevice(device) {
-      let page = '';
-      if (device.id.includes('light')) {
-        page = 'light';
-      } else if (device.id === 'air') {
-        page = 'air';
-      } else if (device.id === 'shower') {
-        page = 'shower';
+    
+    toggleDevice(device) {
+      // 1. 本地即时更新，使用响应式方法更新设备状态
+      // 创建一个新的设备对象数组，完全替换当前的设备列表
+      const newDevices = this.filteredDevices.map(d => {
+        if (d.id === device.id) {
+          return { ...d, on: !d.on };
+        }
+        return d;
+      });
+      
+      // 2. 更新refreshKey强制computed属性重新计算
+      this.refreshKey += 1;
+      
+      // 3. 立即强制重新渲染以实现即时反馈
+      this.$nextTick(() => {
+        this.$forceUpdate();
+      });
+      
+      // 4. 提交到store进行实际状态更新
+      setTimeout(() => {
+        this.$store.commit('TOGGLE_DEVICE_ON', device.id);
+      }, 0);
+    },
+    
+    deleteDevice(id) {
+      // 先获取设备是否存在，再删除
+      const device = this.$store.getters.getCurrentUserDeviceById(id);
+      if (device) {
+        // 显示确认对话框
+        uni.showModal({
+          title: '确认删除',
+          content: '确定要删除该设备吗？',
+          success: (res) => {
+            if (res.confirm) {
+              this.$store.commit('DELETE_DEVICE', id);
+              // 强制重新渲染以更新列表
+              this.$forceUpdate();
+              uni.showToast({
+                title: '删除成功',
+                icon: 'success'
+              });
+            }
+          }
+        });
       }
-      uni.navigateTo({
-        url: `/pages/device/${page}?deviceId=${device.id}`
+    },
+    
+    goToDevice(device) {
+      // 跳转到设备详情页面
+      let devicePage = '';
+      switch(device.type) {
+        case 'light':
+          devicePage = '/pages/device/light';
+          break;
+        case 'air':
+          devicePage = '/pages/device/air';
+          break;
+        case 'shower':
+          devicePage = '/pages/device/shower';
+          break;
+        default:
+          devicePage = '/pages/device/light';
+      }
+      
+      // 使用try-catch捕获可能的导航错误
+      try {
+        uni.navigateTo({
+          url: `${devicePage}?deviceId=${device.id}`,
+          success: () => {
+            console.log('成功跳转到设备详情页');
+          },
+          fail: (err) => {
+            console.error('设备详情页跳转失败:', err);
+            uni.showToast({
+              title: '跳转失败，请重试',
+              icon: 'none'
+            });
+          }
+        });
+      } catch (error) {
+        console.error('导航异常:', error);
+      }
+    },
+    
+    adjustTemperature(change, device) {
+      this.$store.commit('SET_AIR_TEMP', {
+        deviceId: device.id,
+        temp: device.temp + change
+      });
+      // 强制重新渲染以更新温度显示
+      this.$forceUpdate();
+    },
+    
+    // 添加设备相关方法
+    showAddDeviceForm() {
+      this.showAddForm = true;
+      // 重置表单数据
+      this.deviceTypeIndex = 0;
+      this.deviceSceneIndex = 0;
+      this.deviceName = '';
+    },
+    
+    hideAddDeviceForm() {
+      this.showAddForm = false;
+    },
+    
+    changeDeviceType(e) {
+      this.deviceTypeIndex = e.detail.value;
+    },
+    
+    changeDeviceScene(e) {
+      this.deviceSceneIndex = e.detail.value;
+    },
+    
+    addDevice() {
+      if (!this.deviceName.trim()) {
+        uni.showToast({
+          title: '设备名称不能为空',
+          icon: 'none'
+        });
+        return;
+      }
+      
+      // 创建新设备
+      const newDevice = {
+        id: Date.now().toString(),
+        name: this.deviceName,
+        type: this.getDeviceTypeValue(this.deviceTypes[this.deviceTypeIndex]),
+        scene: this.deviceScenes[this.deviceSceneIndex],
+        desc: '正常运行',
+        on: false,
+        online: true,
+        iconOn: this.getDeviceIcon(this.deviceTypes[this.deviceTypeIndex], true),
+        iconOff: this.getDeviceIcon(this.deviceTypes[this.deviceTypeIndex], false)
+      };
+      
+      // 如果是空调，添加温度属性
+      if (newDevice.type === 'air') {
+        newDevice.temp = 25;
+        newDevice.mode = 'auto';
+        newDevice.desc = '自动 25℃';
+      } else if (newDevice.type === 'light') {
+        // 灯光设备只保留基础功能，不添加亮度调节
+        newDevice.desc = '已关闭';
+      } else if (newDevice.type === 'shower') {
+        // 淋浴设备添加温度属性
+        newDevice.temp = 40;
+        newDevice.desc = '水温 40℃';
+      }
+      
+      // 通过store添加设备
+      this.$store.commit('ADD_DEVICE', newDevice);
+      
+      // 关闭模态框
+      this.hideAddDeviceForm();
+      
+      // 添加设备后立即刷新
+      this.refreshData();
+      
+      uni.showToast({
+        title: '设备添加成功'
       });
     },
-    // 激活模式
-    activateMode(modeName) {
-      if (this.currentMode === modeName) {
-        this.$store.commit("DEACTIVATE_MODE");
-      } else {
-        this.$store.commit("ACTIVATE_MODE", modeName);
+    
+    getDeviceTypeValue(typeName) {
+      switch(typeName) {
+        case '灯':
+          return 'light';
+        case '空调':
+          return 'air';
+        case '淋浴':
+          return 'shower';
+        default:
+          return 'light';
       }
     },
-    // 温度提示文本
-    getTempTip(status) {
-      const tipMap = { low: "偏低", normal: "", high: "偏高" };
-      return tipMap[status];
+    
+    getDeviceIcon(typeName, isOn) {
+      const suffix = isOn ? '_on' : '_off';
+      switch(typeName) {
+        case '灯':
+          return `/static/icon/light${suffix}.png`;
+        case '空调':
+          return `/static/icon/air${suffix}.png`;
+        case '淋浴':
+          return `/static/icon/shower${suffix}.png`;
+        default:
+          return `/static/icon/light${suffix}.png`;
+      }
     },
-    // 湿度提示文本
-    getHumidityTip(status) {
-      const tipMap = { dry: "偏干", normal: "", wet: "偏湿" };
-      return tipMap[status];
+    
+    // 刷新数据方法
+    refreshData() {
+      // 改变refreshKey以触发computed重新计算
+      this.refreshKey = this.refreshKey + 1;
+      // 强制重新渲染UI
+      this.$forceUpdate();
+      // 显示刷新成功提示
+      uni.showToast({
+        title: '数据已刷新',
+        icon: 'success',
+        duration: 1000
+      });
     },
-    // 跳转到设备管理页
-    goToDeviceManage() {
-      uni.navigateTo({ url: "/pages/device/manage" });
+    
+    // 跳转到消息页面
+    goToMessage() {
+      // 自动将所有未读消息标记为已读
+      const unreadMessages = this.$store.getters.getMessages.filter(msg => !msg.read);
+      unreadMessages.forEach(msg => {
+        this.$store.commit('MARK_MESSAGE_AS_READ', msg.id);
+      });
+      
+      uni.navigateTo({
+        url: '/pages/message/message'
+      });
     },
-    // 跳转到环境监测详情页
-    goToEnvMonitor() {
-      uni.navigateTo({ url: "/pages/environment/monitor" });
+    
+    // 获取新消息并保存到Vuex
+    fetchNewMessages() {
+      try {
+        // 获取现有的消息，用于保留已读状态
+        const existingMessages = this.$store.getters.getMessages || []
+        // 创建一个映射，方便查找现有消息的已读状态
+        const existingMessagesMap = {}
+        existingMessages.forEach(msg => {
+          existingMessagesMap[msg.id] = msg.read
+        })
+        
+        // 模拟数据，用于开发环境测试
+        // 在实际环境中，这部分会被真实的API请求结果替代
+        const mockMessages = [
+          {
+            id: '1',
+            title: '火灾预警',
+            content: '检测到火焰，立即处理！',
+            type: 'fire',
+            time: new Date().toISOString(),
+            read: existingMessagesMap['1'] || false
+          }
+        ]
+        
+        // 在模拟环境中直接使用mock数据
+        // 为每条消息添加read字段，如果是已存在的消息则保留原有的已读状态
+        const messagesWithReadStatus = mockMessages.map(msg => ({
+          ...msg,
+          read: existingMessagesMap[msg.id] || false, // 保留已读状态，新消息默认为未读
+          time: new Date(msg.time).getTime() // 转换时间格式为时间戳
+        }))
+        
+        // 将消息保存到Vuex store
+        this.$store.commit('SET_MESSAGES', messagesWithReadStatus)
+        
+        // 注释掉真实API请求，仅在模拟环境使用
+        /*
+        uni.request({
+          url: `${this.API_CONFIG.BASE_URL}${this.API_CONFIG.ENDPOINTS.GET_MESSAGES}`,
+          method: 'GET',
+          timeout: this.API_CONFIG.TIMEOUT,
+          success: (res) => {
+            if (res.statusCode === 200 && Array.isArray(res.data)) {
+              // 为每条消息添加read字段，如果是已存在的消息则保留原有的已读状态
+              const messagesWithReadStatus = res.data.map(msg => ({
+                ...msg,
+                read: existingMessagesMap[msg.id] || false, // 保留已读状态，新消息默认为未读
+                time: new Date(msg.time).getTime() // 转换时间格式为时间戳
+              }))
+              
+              // 将消息保存到Vuex store
+              this.$store.commit('SET_MESSAGES', messagesWithReadStatus)
+            }
+          },
+          fail: (err) => {
+            console.error('获取消息失败:', err)
+            // API请求失败时使用模拟数据
+            const messagesWithReadStatus = mockMessages.map(msg => ({
+              ...msg,
+              read: existingMessagesMap[msg.id] || false,
+              time: new Date(msg.time).getTime()
+            }))
+            this.$store.commit('SET_MESSAGES', messagesWithReadStatus)
+          }
+        })
+        */
+      } catch (error) {
+        console.error('获取消息异常:', error)
+        // 异常情况下也使用模拟数据
+        const mockMessages = [
+          {
+            id: '1',
+            title: '火灾预警',
+            content: '检测到火焰，立即处理！',
+            type: 'fire',
+            time: new Date().toISOString(),
+            read: false
+          }
+        ]
+        this.$store.commit('SET_MESSAGES', mockMessages)
+      }
     }
   }
 };
@@ -257,195 +661,288 @@ export default {
 <style scoped>
 /* 基础容器样式 */
 .page-container {
-  min-height: 100vh;
-  position: relative;
-  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  background-color: #f5f5f5;
+  overflow: visible;
+  margin: 0;
+  padding: 0;
 }
 
-/* 修复背景显示问题 */
+/* 页面背景 */
 .page {
-  padding: 20rpx;
-  font-family: "Arial", "PingFang SC", sans-serif;
+  width: 100%;
   min-height: 100vh;
-  background-repeat: no-repeat;
+  padding: 0 20rpx;
   box-sizing: border-box;
-  /* 确保背景图覆盖整个页面且不重复 */
-  background-attachment: fixed;
-  background-position: center;
-  background-size: cover;
+  margin: 0;
+  position: relative;
 }
 
 /* 头部样式 */
 .header {
-  margin: 15rpx 0 20rpx;
+  text-align: center;
+  margin-bottom: 20rpx;
+  margin-top: 0;
+  padding-top: 0;
+  position: relative;
+  height: 70rpx;
+  line-height: 70rpx;
+}
+
+/* 刷新按钮样式 */
+.refresh-btn {
+  position: absolute;
+  left: 30rpx;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 50rpx;
+  height: 50rpx;
+}
+
+/* 消息按钮容器 */
+.message-container {
+  position: absolute;
+  right: 30rpx;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 消息按钮样式 */
+.message-btn {
+  width: 50rpx;
+  height: 50rpx;
+}
+
+/* 消息角标样式 */
+.message-badge {
+  position: absolute;
+  top: -10rpx;
+  right: -10rpx;
+  min-width: 36rpx;
+  height: 36rpx;
+  line-height: 36rpx;
+  padding: 0 10rpx;
+  background-color: #ff4d4f;
+  color: white;
+  font-size: 24rpx;
+  border-radius: 18rpx;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 确保页面内容从顶部开始 */
+* {
+  box-sizing: border-box;
+}
+
+page {
+  padding: 0;
+  margin: 0;
 }
 .title {
-  font-size: 32rpx;
+  font-size: 36rpx;
   font-weight: bold;
-  color: #007AFF;
-  letter-spacing: 2rpx;
+  color: #333;
 }
 
 /* 场景导航 */
 .scene-nav {
-  display: flex;
-  flex-direction: row;
-  padding: 8rpx 0;
-  white-space: nowrap;
-  margin-bottom: 8rpx;
+  height: 70rpx;
+  margin-bottom: 20rpx;
 }
 .scene-item {
   display: inline-block;
-  padding: 12rpx 25rpx;
-  margin-right: 15rpx;
+  height: 60rpx;
+  line-height: 60rpx;
+  padding: 0 30rpx;
+  margin-right: 20rpx;
   border-radius: 30rpx;
-  background: rgba(255,255,255,0.7);
-  font-size: 24rpx;
+  font-size: 28rpx;
   color: #666;
-  box-shadow: 0 2rpx 5rpx rgba(0,0,0,0.05);
+  background-color: rgba(255, 255, 255, 0.7);
 }
 .scene-item.active {
-  background: #007AFF;
-  color: #fff;
+  color: #007AFF;
+  background-color: rgba(0, 122, 255, 0.1);
 }
 
-/* 状态显示区：紧凑布局，向左靠拢 */
+/* 环境监测区域 */
 .status-container {
   display: flex;
-  align-items: center;
-  gap: 8rpx; /* 缩小卡片间距 */
-  margin: 10rpx 0;
-  padding: 5rpx 0;
-  overflow-x: auto;
-  /* 去掉右侧滚动留白 */
-  padding-left: 2rpx;
-  padding-right: 2rpx;
+  gap: 20rpx;
+  margin-bottom: 30rpx;
 }
-
-/* 缩小状态卡片尺寸 */
 .status-card {
-  background: rgba(255, 255, 255, 0.85);
+  flex: 1;
+  background-color: rgba(255, 255, 255, 0.85);
   border-radius: 15rpx;
-  padding: 10rpx 15rpx; /* 减小内边距 */
+  padding: 20rpx;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  min-width: 130rpx; /* 缩小卡片宽度 */
-  box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.05);
+  position: relative;
 }
-
+.status-icon {
+  width: 50rpx;
+  height: 50rpx;
+  margin-bottom: 10rpx;
+}
+.status-value {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+}
+.status-value.normal {
+  color: #333;
+}
+.status-value.low {
+  color: #007AFF;
+}
+.status-value.high {
+  color: #FF3B30;
+}
+.status-tip {
+  font-size: 20rpx;
+  color: #666;
+  margin-top: 5rpx;
+}
 .more-card {
   cursor: pointer;
-}
-.more-card:active {
-  background: rgba(255,255,255,0.95);
-}
-
-.status-icon {
-  width: 28rpx; /* 缩小图标 */
-  height: 28rpx;
-  margin-right: 8rpx;
-  flex-shrink: 0;
-}
-
-.status-value {
-  font-size: 22rpx; /* 缩小文字 */
-  font-weight: 500;
-  flex-shrink: 0;
-}
-
-.status-value.low, .status-value.dry { color: #007AFF; }
-.status-value.normal { color: #333; }
-.status-value.high, .status-value.wet { color: #FF3B30; }
-
-.status-tip {
-  font-size: 14rpx; /* 缩小提示文字 */
-  color: inherit;
-  margin-left: 4rpx;
-  opacity: 0.8;
 }
 
 /* 设备统计卡片 */
 .device-stat-card {
-  background: rgba(255,255,255,0.9);
-  border-radius: 20rpx;
-  padding: 18rpx 25rpx;
-  margin-bottom: 20rpx;
+  background-color: rgba(255, 255, 255, 0.85);
+  border-radius: 15rpx;
+  padding: 20rpx;
+  margin-bottom: 30rpx;
+  position: relative;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.05);
 }
 .stat-item {
   flex: 1;
   text-align: center;
+  cursor: pointer;
 }
 .stat-label {
-  font-size: 20rpx;
-  color: #999;
   display: block;
+  font-size: 24rpx;
+  color: #666;
+  margin-bottom: 5rpx;
 }
 .stat-value {
-  font-size: 26rpx;
+  display: block;
+  font-size: 36rpx;
   font-weight: bold;
   color: #333;
-  margin-top: 3rpx;
 }
-.stat-value.online { color: #00B42A; }
-.stat-value.active { color: #FF7D00; }
+.stat-value.online {
+  color: #34C759;
+}
+.stat-value.active {
+  color: #007AFF;
+}
 .stat-arrow {
-  width: 28rpx;
-  height: 28rpx;
-  margin-left: 8rpx;
+  width: 20rpx;
+  height: 32rpx;
+  position: absolute;
+  right: 60rpx;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.add-device-btn {
+  position: absolute;
+  right: 20rpx;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 50rpx;
+  height: 50rpx;
+  line-height: 50rpx;
+  text-align: center;
+  font-size: 40rpx;
+  font-weight: bold;
+  color: #007AFF;
+  background-color: rgba(0, 122, 255, 0.1);
+  border-radius: 50%;
+  z-index: 10;
 }
 
 /* 模式选择 */
 .modes {
   display: flex;
-  justify-content: space-between;
-  margin-bottom: 20rpx;
-  padding: 0 8rpx;
+  gap: 20rpx;
+  margin-bottom: 30rpx;
+}
+
+/* 温度控制样式 */
+.temp-controls {
+  display: flex;
+  align-items: center;
+  margin-top: 10rpx;
+}
+.current-temp {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #007AFF;
+  margin: 0 20rpx;
+}
+.temp-btn {
+  width: 50rpx;
+  height: 50rpx;
+  border-radius: 50%;
+  background-color: #f0f0f0;
+  color: #333;
+  font-size: 28rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  margin: 0 5rpx;
+}
+.temp-btn.minus {
+  background-color: #FF3B30;
+  color: white;
+}
+.temp-btn.plus {
+  background-color: #34C759;
+  color: white;
 }
 .mode-item {
-  width: 130rpx;
+  flex: 1;
   height: 70rpx;
-  background: rgba(255,255,255,0.7);
-  border-radius: 20rpx;
-  text-align: center;
   line-height: 70rpx;
-  font-size: 24rpx;
-  color: #333;
-  box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.05);
+  text-align: center;
+  font-size: 28rpx;
+  color: #666;
+  background-color: rgba(255, 255, 255, 0.85);
+  border-radius: 15rpx;
   position: relative;
 }
 .mode-item.active {
-  background: #007AFF;
-  color: #fff;
+  color: #007AFF;
+  background-color: rgba(0, 122, 255, 0.1);
 }
 .active-indicator {
   position: absolute;
-  bottom: 4rpx;
-  right: 4rpx;
-  width: 14rpx;
-  height: 14rpx;
-  background-color: #fff;
-  border-radius: 50%;
+  bottom: 0;
+  left: 25%;
+  width: 50%;
+  height: 6rpx;
+  background-color: #007AFF;
+  border-radius: 3rpx;
 }
 
 /* 设备列表滚动容器 */
 .devices-scroll {
-  flex: 1;
-  height: calc(100vh - 420rpx);
-  scrollbar-width: thin;
+  height: calc(100vh - 500rpx);
 }
-.devices-scroll::-webkit-scrollbar {
-  width: 6rpx;
-}
-.devices-scroll::-webkit-scrollbar-thumb {
-  background-color: rgba(0,0,0,0.1);
-  border-radius: 3rpx;
-}
-
-/* 设备卡片容器 */
 .devices {
   display: flex;
   flex-direction: column;
@@ -505,9 +1002,27 @@ export default {
   font-size: 20rpx;
   color: #999;
 }
+.device-right-controls {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
 .device-switch {
   transform: scale(0.85);
   z-index: 10;
+  margin-right: 10rpx;
+}
+
+.delete-btn {
+  position: relative;
+  right: 0;
+  top: 0;
+  transform: none;
+  width: 40rpx;
+  height: 40rpx;
+  z-index: 20;
+  cursor: pointer;
 }
 
 /* 空调温度控制 */
@@ -549,5 +1064,110 @@ export default {
 .bottom-space {
   height: 30rpx;
 }
+
+/* 模态框样式 - 确保设备类型和场景选择器正常显示 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 100rpx;
+  z-index: 999;
+  pointer-events: auto;
+}
+.modal-content {
+  background-color: white;
+  border-radius: 20rpx;
+  width: 80%;
+  max-width: 600rpx;
+  max-height: 70vh;
+  z-index: 999;
+  position: relative;
+  pointer-events: auto;
+  overflow: visible;
+}
+/* 选择器样式 - 确保选择器在最上层显示 */
+.picker {
+  position: relative;
+  z-index: 1999;
+}
+.modal-header {
+  padding: 30rpx 0;
+  text-align: center;
+  border-bottom: 1rpx solid #eee;
+  background-color: white;
+}
+.modal-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+}
+.modal-body {
+  padding: 30rpx;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+.form-item {
+  margin-bottom: 30rpx;
+}
+.form-item:last-child {
+  margin-bottom: 0;
+}
+.form-label {
+  display: block;
+  font-size: 28rpx;
+  color: #333;
+  margin-bottom: 15rpx;
+}
+.picker {
+  height: 80rpx;
+  line-height: 80rpx;
+  padding: 0 20rpx;
+  background-color: #f5f5f5;
+  border-radius: 10rpx;
+  font-size: 28rpx;
+  color: #666;
+}
+.form-input {
+  height: 80rpx;
+  line-height: 80rpx;
+  padding: 0 20rpx;
+  background-color: #f5f5f5;
+  border-radius: 10rpx;
+  font-size: 28rpx;
+  color: #333;
+}
+.modal-footer {
+  padding: 20rpx 30rpx;
+  display: flex;
+  gap: 20rpx;
+  border-top: 1rpx solid #eee;
+}
+.btn-cancel {
+  flex: 1;
+  height: 80rpx;
+  line-height: 80rpx;
+  text-align: center;
+  font-size: 28rpx;
+  color: #666;
+  background-color: #f5f5f5;
+  border-radius: 10rpx;
+  border: none;
+}
+.btn-confirm {
+  flex: 1;
+  height: 80rpx;
+  line-height: 80rpx;
+  text-align: center;
+  font-size: 28rpx;
+  color: white;
+  background-color: #007AFF;
+  border-radius: 10rpx;
+  border: none;
+}
 </style>
-    

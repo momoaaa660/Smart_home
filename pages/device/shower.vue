@@ -47,27 +47,29 @@
 export default {
   data() {
     return {
-      showerDevice: {},
+      showerDevice: {
+        temp: 40  // 提供默认温度值
+      },
       deviceId: ''
     };
   },
   onLoad(options) {
-    // 获取从主页传递的设备ID
-    this.deviceId = options.deviceId || 'shower';
-    // 初始化设备数据
-    this.loadDeviceData();
-    
-    // 监听Vuex中设备数据变化，实现实时同步
-    this.unwatch = this.$store.watch(
-      () => this.$store.getters.getDeviceById(this.deviceId),
-      (newVal) => {
-        if (newVal) {
-          this.showerDevice = { ...newVal };
-        }
-      },
-      { deep: true } // 深度监听对象变化
-    );
-  },
+      // 获取从主页传递的设备ID
+      this.deviceId = options.deviceId || 'shower';
+      // 初始化设备数据
+      this.loadDeviceData();
+      
+      // 监听Vuex中设备数据变化，实现实时同步
+      this.unwatch = this.$store.watch(
+        () => this.$store.getters.getCurrentUserDeviceById(this.deviceId),
+        (newVal) => {
+          if (newVal) {
+            this.showerDevice = { ...newVal };
+          }
+        },
+        { deep: true } // 深度监听对象变化
+      );
+    },
   onUnload() {
     // 移除监听器，避免内存泄漏
     if (this.unwatch) {
@@ -77,23 +79,39 @@ export default {
   methods: {
     // 从Vuex加载设备数据
     loadDeviceData() {
-      const device = this.$store.getters.getDeviceById(this.deviceId);
+      const device = this.$store.getters.getCurrentUserDeviceById(this.deviceId);
       if (device) {
-        this.showerDevice = { ...device };
+        // 确保有温度属性
+        this.showerDevice = { 
+          ...device, 
+          temp: device.temp || 40  // 如果没有温度属性，设置默认值
+        };
       }
     },
     // 返回主页
     navigateBack() {
       uni.navigateBack();
     },
-    // 切换设备开关状态
+    // 切换设备开关状态 - 优化体验：先本地更新再提交状态
     toggleDevice() {
+      // 本地即时更新，提供即时反馈
+      this.showerDevice.on = !this.showerDevice.on;
+      // 强制更新UI
+      this.$forceUpdate();
+      
+      // 提交到Vuex进行实际状态更新
       this.$store.commit('TOGGLE_DEVICE_ON', this.deviceId);
     },
-    // 调节温度
+    // 调节温度 - 优化体验：先本地更新再提交状态
     adjustTemp(change) {
+      // 本地即时更新，提供即时反馈
       // 热水器温度范围限制（30-60℃）
       const newTemp = Math.min(Math.max(this.showerDevice.temp + change, 30), 60);
+      this.showerDevice.temp = newTemp;
+      // 强制更新UI
+      this.$forceUpdate();
+      
+      // 提交到Vuex进行实际状态更新
       this.$store.commit('SET_SHOWER_TEMP', {
         deviceId: this.deviceId,
         temp: newTemp

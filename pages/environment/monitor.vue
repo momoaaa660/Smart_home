@@ -2,11 +2,11 @@
   <view class="page-container">
     <!-- 带背景的页面，与主页风格统一 -->
     <view class="page" :style="{ backgroundImage: 'url(/static/img/home_bg.png)', backgroundSize: 'cover' }">
-      <!-- 顶部标题和返回按钮 -->
-      <view class="header">
+      <!-- 头部导航，包含返回按钮 -->
+  <!--    <view class="header">
         <text class="back" @click="navigateBack">←</text>
-        <text class="title">数据监测</text>
-      </view>
+        <text class="title">环境监测</text>
+      </view> -->
       
       <!-- 设备卡片列表（滚动容器） -->
       <scroll-view class="devices-scroll" scroll-y>
@@ -23,6 +23,9 @@
                 <text class="status" :class="tempStatusClass">{{ tempStatusText }}</text>
               </view>
             </view>
+            <view class="detail-btn" @click="goToDetail('temperature')">
+              <image src="/static/icon/arrow-right.png" class="arrow-icon" />
+            </view>
           </view>
 
           <!-- 湿度卡片 -->
@@ -36,6 +39,9 @@
                 </view>
                 <text class="status" :class="humidityStatusClass">{{ humidityStatusText }}</text>
               </view>
+            </view>
+            <view class="detail-btn" @click="goToDetail('humidity')">
+              <image src="/static/icon/arrow-right.png" class="arrow-icon" />
             </view>
           </view>
 
@@ -108,9 +114,9 @@ export default {
       return this.$store.getters.getFullEnvironment;
     },
     
-    // 温度进度条宽度计算
+    // 温度进度条宽度计算（0-50度范围）
     tempGaugeWidth() {
-      const width = ((this.envData.temp - 25) / 10) * 60 + 20;
+      const width = (this.envData.temp / 50) * 90 + 5; // 0度对应5%，50度对应95%
       return Math.max(5, Math.min(width, 95)); // 限制在5%-95%之间
     },
     
@@ -223,6 +229,13 @@ export default {
     // 返回上一页（主页）
     navigateBack() {
       uni.navigateBack();
+    },
+    
+    // 跳转到详情页
+    goToDetail(type) {
+      uni.navigateTo({
+        url: `/pages/environment/linechart?type=${type}`
+      });
     },
     
     // 进度条动画函数（平滑过渡效果）
@@ -342,6 +355,27 @@ export default {
   align-items: center;
   box-shadow: 0 2rpx 6rpx rgba(0,0,0,0.05);
   transition: all 0.2s ease;
+}
+
+/* 详情按钮样式 */
+.detail-btn {
+  width: 60rpx;
+  height: 60rpx;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0, 122, 255, 0.1);
+  border-radius: 50%;
+  margin-top: -20rpx;
+}
+
+.detail-btn:active {
+  background: rgba(0, 122, 255, 0.2);
+}
+
+.arrow-icon {
+  width: 24rpx;
+  height: 24rpx;
 }
 
 .device-card:hover {
