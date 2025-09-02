@@ -61,3 +61,1011 @@
     "response": "好的，已将客厅主灯的亮度调低了一些，现在感觉如何？"
   }
 }
+{
+  "action": "control_device",
+  "parameters": {
+    "devices": [
+      {
+        "device_id": 1,
+        "action": "adjust_brightness",
+        "status": {
+          "power": true,
+          "brightness": 60
+        }
+      }
+    ],
+    "response": "好的，已将客厅主灯的亮度调低了一些，现在感觉如何？"
+  }
+}
+{
+  "action": "control_device",
+  "parameters": {
+    "devices": [
+      {
+        "device_id": 1,
+        "action": "adjust_brightness",
+        "status": {
+          "power": true,
+          "brightness": 50
+        }
+      }
+    ],
+    "response": "好的，已将客厅主灯的亮度调低了一些，现在感觉如何？"
+  }
+}
+{
+    "action": "control_device",
+    "parameters": {
+        "devices": [
+            {
+                "device_id": 1,
+                "action": "adjust_brightness",
+                "status": {
+                    "power": true,
+                    "brightness": 50
+                }
+            }
+        ],
+        "response": "好的，已将客厅主灯的亮度调低了一些，现在感觉如何？"
+    }
+}
+{
+  "action": "control_device",
+  "parameters": {
+    "devices": [
+      {
+        "device_id": 1,
+        "action": "adjust_brightness",
+        "status": {
+          "power": true,
+          "brightness": 50
+        }
+      }
+    ],
+    "response": "好的，已将客厅主灯的亮度调低了一些，现在感觉如何？"
+  }
+}
+{
+  "action": "answer_user",
+  "parameters": {
+    "response": "您好！我是鸿蒙管家，可以帮您控制家中的智能设备，比如灯光、空调、风扇等。您有什么需要帮助的吗？"
+  }
+}
+{
+    "action": "control_device",
+    "parameters": {
+        "devices": [
+            {
+                "device_id": 1,
+                "action": "adjust_brightness",
+                "status": {
+                    "power": true,
+                    "brightness": 50
+                }
+            }
+        ],
+        "response": "好的，已将客厅主灯的亮度调低了一些，现在感觉如何？"
+    }
+}
+{
+  "action": "control_device",
+  "parameters": {
+    "devices": [
+      {
+        "device_id": 2,
+        "action": "turn_on",
+        "status": {
+          "power": true
+        }
+      }
+    ],
+    "response": "好的，已为您打开卧室台灯。"
+  }
+}
+{
+  "action": "control_device",
+  "parameters": {
+    "devices": [
+      {
+        "device_id": 2,
+        "action": "turn_on",
+        "status": {
+          "power": true,
+          "brightness": 50
+        }
+      }
+    ],
+    "response": "好的，已为您打开卧室台灯。"
+  }
+}
+{
+  "action": "control_device",
+  "parameters": {
+    "devices": [
+      {
+        "device_id": 2,
+        "action": "turn_on",
+        "status": {
+          "power": true
+        }
+      }
+    ],
+    "response": "好的，已为您打开卧室灯。"
+  }
+}
+{
+  "action": "control_device",
+  "parameters": {
+    "devices": [
+      {
+        "device_id": 2,
+        "action": "turn_on",
+        "status": {
+          "power": true,
+          "brightness": 50
+        }
+      }
+    ],
+    "response": "好的，已为您打开卧室台灯。"
+  }
+}
+{
+  "action": "control_device",
+  "parameters": {
+    "devices": [
+      {
+        "device_id": 2,
+        "action": "turn_on",
+        "status": {
+          "power": true,
+          "brightness": 50
+        }
+      }
+    ],
+    "response": "好的，已为您打开卧室台灯。"
+  }
+}
+{
+  "action": "control_device",
+  "parameters": {
+    "devices": [
+      {
+        "device_id": 2,
+        "action": "turn_on",
+        "status": {
+          "power": true
+        }
+      }
+    ],
+    "response": "好的，已为您打开卧室台灯。"
+  }
+}
+{
+  "action": "control_device",
+  "parameters": {
+    "devices": [
+      {
+        "device_id": 2,
+        "action": "turn_on",
+        "status": {
+          "power": true
+        }
+      }
+    ],
+    "response": "好的，已为您打开卧室台灯。"
+  }
+}
+{
+  "action": "control_device",
+  "parameters": {
+    "devices": [
+      {
+        "device_id": 2,
+        "action": "turn_on",
+        "status": {
+          "power": true,
+          "brightness": 80,
+          "color": "#FFEEAA"
+        }
+      }
+    ],
+    "response": "好的，已为您打开卧室台灯。"
+  }
+}
+{
+  "action": "control_device",
+  "parameters": {
+    "devices": [
+      {
+        "device_id": 1,
+        "action": "turn_on",
+        "status": {
+          "power": true,
+          "brightness": 100,
+          "color": "#FFFFFF"
+        }
+      },
+      {
+        "device_id": 2,
+        "action": "turn_on",
+        "status": {
+          "power": true,
+          "brightness": 80,
+          "color": "#FFEEAA"
+        }
+      },
+      {
+        "device_id": 3,
+        "action": "turn_on",
+        "status": {
+          "power": false,
+          "brightness": 90
+        }
+      }
+    ],
+    "response": "好的，已为您打开客厅主灯、卧室台灯和厨房照明。"
+  }
+}
+{
+    "action": "answer_user",
+    "parameters": {
+        "response": "请问您想打开哪个房间的灯呢？"
+    }
+}
+{
+  "action": "answer_user",
+  "parameters": {
+    "response": "请问您想打开哪个房间的灯呢？"
+  }
+}
+{
+  "action": "answer_user",
+  "parameters": {
+    "response": "您提到厨房，需要我帮您查看厨房的设备状态，或者执行某些操作吗？"
+  }
+}
+{
+  "action": "answer_user",
+  "parameters": {
+    "response": "您提到厨房的灯，需要我帮您打开、关闭或调整亮度吗？"
+  }
+}
+{
+  "action": "answer_user",
+  "parameters": {
+    "response": "请问您想打开哪个房间的灯呢？"
+  }
+}
+{
+  "action": "answer_user",
+  "parameters": {
+    "response": "您提到厨房的灯，是要打开、关闭还是调整亮度呢？"
+  }
+}
+{
+  "action": "answer_user",
+  "parameters": {
+    "response": "今天重庆的天气是晴天，气温28°C。"
+  }
+}
+{
+  "action": "answer_user",
+  "parameters": {
+    "response": "请问您是指哪个房间的灯呢？"
+  }
+}
+{
+  "action": "answer_user",
+  "parameters": {
+    "response": "您提到厨房，需要我帮您控制厨房的设备吗？比如打开厨房照明或者油烟机？"
+  }
+}
+{
+  "action": "answer_user",
+  "parameters": {
+    "response": "请问您是指哪个房间的灯呢？"
+  }
+}
+{
+  "action": "answer_user",
+  "parameters": {
+    "response": "请问您想对厨房的灯进行什么操作？比如打开、关闭或调整亮度？"
+  }
+}
+{
+  "action": "answer_user",
+  "parameters": {
+    "response": "请问您想打开哪个房间的灯呢？我看到家里有客厅、卧室、厨房的灯可以控制。"
+  }
+}
+{
+  "action": "control_device",
+  "parameters": {
+    "devices": [
+      {
+        "device_id": 3,
+        "action": "turn_on",
+        "status": {
+          "power": true,
+          "brightness": 90
+        }
+      }
+    ],
+    "response": "好的，厨房的灯已经打开了。"
+  }
+}
+{
+  "action": "answer_user",
+  "parameters": {
+    "response": "您好！我是鸿蒙管家，随时为您服务。今天有什么需要我帮忙的吗？"
+  }
+}
+{
+  "action": "answer_user",
+  "parameters": {
+    "response": "是啊，今天的天气真的很棒！适合外出活动或者享受户外时光。需要我为您推荐一些适合的活动吗？"
+  }
+}
+{
+  "action": "control_device",
+  "parameters": {
+    "devices": [
+      {
+        "device_id": 3,
+        "action": "turn_on",
+        "status": {
+          "power": true,
+          "brightness": 90
+        }
+      }
+    ],
+    "response": "好的，厨房的灯已经打开了。"
+  }
+}
+{
+  "action": "control_device",
+  "parameters": {
+    "devices": [
+      {
+        "device_id": 3,
+        "action": "turn_on",
+        "status": {
+          "power": true,
+          "brightness": 90
+        }
+      }
+    ],
+    "response": "好的，厨房的灯已经打开了。"
+  }
+}
+{
+    "action": "answer_user",
+    "parameters": {
+        "response": "厨房的灯现在是开着的，亮度为90%。您想要关闭、调节亮度还是其他操作？"
+    }
+}
+{
+    "action": "answer_user",
+    "parameters": {
+        "response": "厨房的灯现在是开着的，亮度为90%。您想要关闭、调节亮度还是其他操作？"
+    }
+}
+{
+    "action": "answer_user",
+    "parameters": {
+        "response": "厨房的灯现在是开着的，亮度为90%。您想要关闭、调节亮度还是其他操作？"
+    }
+}
+{
+    "action": "answer_user",
+    "parameters": {
+        "response": "厨房的灯现在是开着的，亮度为90%。您想要关闭、调节亮度还是其他操作？"
+    }
+}
+{
+    "action": "answer_user",
+    "parameters": {
+        "response": "浴室的灯现在是开着的，亮度为90%。您想要关闭、调节亮度还是其他操作？"
+    }
+}
+{
+  "action": "answer_user",
+  "parameters": {
+    "response": "书房的灯现在是关着的，您是想要打开它吗？"
+  }
+}
+{
+    "action": "answer_user",
+    "parameters": {
+        "response": "卫生间的灯现在是开着的，亮度为90%。您想要关闭、调节亮度还是其他操作？"
+    }
+}
+{
+    "action": "answer_user",
+    "parameters": {
+        "response": "储物间的灯现在是关着的，您是想要打开它吗？"
+    }
+}
+{
+    "action": "execute_scene",
+    "parameters": {
+        "scene_id": 1,
+        "response": "好的，已为您开启晚安场景，客厅灯光已关闭，卧室灯光调至柔和模式，空调温度调整为25度。祝您一夜好眠！"
+    }
+}
+{
+    "action": "answer_user",
+    "parameters": {
+        "response": "请问您想打开哪个房间的灯呢？我看到家里有客厅、卧室、厨房的灯可以控制。"
+    }
+}
+{
+    "action": "answer_user",
+    "parameters": {
+        "response": "客厅的灯现在是开着的，亮度为100%。您想要关闭、调节亮度还是其他操作？"
+    }
+}
+{
+    "action": "control_device",
+    "parameters": {
+        "devices": [
+            {
+                "device_id": 1,
+                "action": "adjust_brightness",
+                "status": {
+                    "power": true,
+                    "brightness": 40
+                }
+            },
+            {
+                "device_id": 2,
+                "action": "adjust_brightness",
+                "status": {
+                    "power": true,
+                    "brightness": 40
+                }
+            },
+            {
+                "device_id": 3,
+                "action": "adjust_brightness",
+                "status": {
+                    "power": true,
+                    "brightness": 40
+                }
+            }
+        ],
+        "response": "已将客厅主灯、卧室台灯和卫生间照明的亮度调节为40%。"
+    }
+}
+{
+    "action": "answer_user",
+    "parameters": {
+        "response": "请问您想关闭哪个房间的灯呢？我看到家里有客厅、卧室、厨房的灯可以控制。"
+    }
+}
+{
+    "action": "control_device",
+    "parameters": {
+        "devices": [
+            {
+                "device_id": 1,
+                "action": "turn_off",
+                "status": {
+                    "power": false
+                }
+            },
+            {
+                "device_id": 2,
+                "action": "turn_off",
+                "status": {
+                    "power": false
+                }
+            },
+            {
+                "device_id": 3,
+                "action": "turn_off",
+                "status": {
+                    "power": false
+                }
+            },
+            {
+                "device_id": 5,
+                "action": "turn_off",
+                "status": {
+                    "power": false
+                }
+            },
+            {
+                "device_id": 6,
+                "action": "turn_off",
+                "status": {
+                    "power": false
+                }
+            }
+        ],
+        "response": "好的，已为您关闭客厅主灯、卧室台灯、卫生间照明、厨房油烟机和阳台自动浇水器。"
+    }
+}
+{
+    "action": "control_device",
+    "parameters": {
+        "devices": [
+            {
+                "device_id": 1,
+                "action": "adjust_brightness",
+                "status": {
+                    "power": true,
+                    "brightness": 40
+                }
+            }
+        ],
+        "response": "好的，已将客厅主灯的亮度调低了一些，现在感觉如何？"
+    }
+}
+{
+    "action": "control_device",
+    "parameters": {
+        "devices": [
+            {
+                "device_id": 1,
+                "action": "adjust_brightness",
+                "status": {
+                    "power": true,
+                    "brightness": 60
+                }
+            }
+        ],
+        "response": "好的，已将客厅主灯的亮度调高了一些，现在感觉如何？"
+    }
+}
+{
+    "action": "control_device",
+    "parameters": {
+        "devices": [
+            {
+                "device_id": 1,
+                "action": "adjust_brightness",
+                "status": {
+                    "power": true,
+                    "brightness": 40
+                }
+            }
+        ],
+        "response": "好的，已将客厅主灯的亮度调低了一些，现在感觉如何？"
+    }
+}
+{
+  "action": "answer_user",
+  "parameters": {
+    "response": "请问您想打开哪个房间的灯呢？我看到家里有客厅、卧室、厨房的灯可以控制。"
+  }
+}
+{
+    "action": "answer_user",
+    "parameters": {
+        "response": "厨房的灯现在是关着的，您是想要打开它吗？还是需要其他操作？"
+    }
+}
+{
+    "action": "answer_user",
+    "parameters": {
+        "response": "目前开着的灯有：客厅主灯（亮度40%）。"
+    }
+}
+{
+    "action": "control_device",
+    "parameters": {
+        "devices": [
+            {
+                "device_id": 1,
+                "action": "turn_off",
+                "status": {
+                    "power": false
+                }
+            },
+            {
+                "device_id": 2,
+                "action": "turn_off",
+                "status": {
+                    "power": false
+                }
+            },
+            {
+                "device_id": 3,
+                "action": "turn_off",
+                "status": {
+                    "power": false
+                }
+            },
+            {
+                "device_id": 5,
+                "action": "turn_off",
+                "status": {
+                    "power": false
+                }
+            },
+            {
+                "device_id": 6,
+                "action": "turn_off",
+                "status": {
+                    "power": false
+                }
+            }
+        ],
+        "response": "好的，已为您关闭客厅主灯、卧室台灯、卫生间照明、厨房油烟机和阳台自动浇水器。"
+    }
+}
+{
+  "action": "control_device",
+  "parameters": {
+    "devices": [
+      {
+        "device_id": 1,
+        "action": "turn_off",
+        "status": {
+          "power": false
+        }
+      }
+    ],
+    "response": "好的，客厅的灯已经关闭了。"
+  }
+}
+{
+  "action": "control_device",
+  "parameters": {
+    "devices": [
+      {
+        "device_id": 3,
+        "action": "set_temperature",
+        "status": {
+          "power": true,
+          "temperature": 24
+        }
+      }
+    ],
+    "response": "好的，已经将客厅空调的温度调至24度。"
+  }
+}
+{
+  "action": "control_device",
+  "parameters": {
+    "devices": [
+      {
+        "device_id": 7,
+        "action": "turn_on",
+        "status": {
+          "power": true,
+          "temperature": 24,
+          "mode": "cool",
+          "fan_speed": 1
+        }
+      }
+    ],
+    "response": "卧室的空调已经为您打开了。"
+  }
+}
+{
+    "action": "control_device",
+    "parameters": {
+        "devices": [
+            {
+                "device_id": 3,
+                "action": "set_temperature",
+                "status": {
+                    "power": true,
+                    "temperature": 28
+                }
+            }
+        ],
+        "response": "好的，已将客厅空调温度调至28度。"
+    }
+}
+{
+    "action": "control_device",
+    "parameters": {
+        "devices": [
+            {
+                "device_id": 1,
+                "action": "adjust_brightness",
+                "status": {
+                    "power": true,
+                    "brightness": 100
+                }
+            }
+        ],
+        "response": "好的，已将客厅主灯的亮度调至最大，现在应该明亮多了。"
+    }
+}
+{
+  "action": "answer_user",
+  "parameters": {
+    "response": "客厅空调当前设定为28度。"
+  }
+}
+{
+    "action": "control_device",
+    "parameters": {
+        "devices": [
+            {
+                "device_id": 3,
+                "action": "set_temperature",
+                "status": {
+                    "power": true,
+                    "temperature": 26
+                }
+            }
+        ],
+        "response": "好的，已经将客厅空调温度调至26度。"
+    }
+}
+{
+  "action": "execute_scene",
+  "parameters": {
+    "scene_id": 3,
+    "response": "好的，已为您开启电影模式。客厅的灯已经关闭，空调温度调至22度，窗帘也自动拉上了，祝您观影愉快！"
+  }
+}
+{
+    "action": "execute_scene",
+    "parameters": {
+        "scene_id": 2,
+        "response": "好的，已为您开启睡眠模式，卧室的灯会逐渐调暗，空调会调整到舒适的温度，祝您一夜好梦！"
+    }
+}
+{
+  "action": "create_scene",
+  "parameters": {
+    "scene_data": {
+      "name": "学习模式",
+      "description": "为高效学习打造的专属环境",
+      "icon": "📚",
+      "color": "#42A5F5",
+      "actions": [
+        {
+          "device_id": 12,
+          "action": "turn_on",
+          "parameters": {
+            "power": true,
+            "brightness": 90,
+            "color": "#F0F8FF"
+          }
+        },
+        {
+          "device_id": 13,
+          "action": "turn_on",
+          "parameters": {
+            "power": true,
+            "humidity_target": 55
+          }
+        },
+        {
+          "device_id": 8,
+          "action": "turn_on",
+          "parameters": {
+            "power": true,
+            "volume": 20,
+            "playing": "轻音乐"
+          }
+        }
+      ]
+    },
+    "response": "🎯 '学习模式'创建成功！✨ 这个场景包含3个智能动作：护眼灯光(90%亮度)、舒适湿度(55%)、专注背景音。🤖 我还发现您经常在14:00-17:00学习，要不要设置自动触发？只需说'每天下午2点自动开启学习模式'就行了！"
+  }
+}
+{
+  "action": "answer_user",
+  "parameters": {
+    "response": "🌞 早上好！今天是2025年9月1日，现在是22:46。让我为您整理一下家里的状态：🌡️ 客厅温度25.5°C，湿度45%，空气质量良好；💡 光照充足，自动调节已优化能耗20%。🤖 基于您的使用习惯，建议在19:00执行'回家模式'，我已经学会了您的作息规律哦！"
+  }
+}
+{
+    "action": "answer_user",
+    "parameters": {
+        "response": "💡 我通过持续观察您的日常操作和设备使用习惯来学习。比如您每天早上7点会打开卧室台灯，晚上10点会启动睡眠模式，这些都被我记录下来啦！🤖 这样我可以提前为您准备舒适的环境，比如在您回家时自动开启灯光和空调。需要我为您展示具体的学习案例吗？"
+    }
+}
+{
+    "action": "answer_user",
+    "parameters": {
+        "response": "您好！我是鸿蒙管家，随时为您服务。无论是控制家电、查询状态，还是创建场景，我都能帮您轻松搞定。有什么需要我帮忙的吗？"
+    }
+}
+{
+    "action": "answer_user",
+    "parameters": {
+        "response": "🌅 早上好！今天是2025年9月1日，现在是22:48。让我为您整理一下当前家庭状态：🌡️ 客厅温度25.5°C，湿度45%，光照充足；🍳 厨房燃气浓度15ppm（正常范围），无异常；📚 书房灯已开启，湿度保持在55%；💤 卧室空调处于睡眠模式，温度24°C。根据您的习惯，我建议您：1️⃣ 今天天气晴朗，可以打开客厅窗帘享受阳光 2️⃣ 如果需要，我可以帮您设置'早晨唤醒模式'哦！"
+    }
+}
+{
+    "action": "answer_user",
+    "parameters": {
+        "response": "🌅 早上好！今天是2025年9月1日，现在是22:49。家里的设备运行正常，客厅温度25.5°C，湿度45%，空气质量良好。天气预报显示重庆今天晴，气温28°C。需要我为您准备什么特别的早晨体验吗？"
+    }
+}
+{
+    "action": "create_automation_rule",
+    "parameters": {
+        "automation_data": {
+            "name": "温度自动调节",
+            "conditions": [
+                { "type": "sensor", "parameter": "temperature", "operator": ">", "value": 28 }
+            ],
+            "actions": [
+                { "device_id": 3, "action": "turn_on", "parameters": { "power": true, "temperature": 25, "mode": "cool" } }
+            ]
+        },
+        "response": "好的，我已经为您设置了当温度超过28°C时自动开启客厅空调的规则。空调将设定为25°C制冷模式。需要我再帮您设置其他条件吗？"
+    }
+}
+{
+  "action": "create_automation_rule",
+  "parameters": {
+    "automation_data": {
+      "name": "高温自动空调启动",
+      "conditions": [
+        {
+          "type": "temperature",
+          "parameter": "temperature",
+          "operator": ">",
+          "value": 28
+        }
+      ],
+      "actions": [
+        {
+          "device_id": 3,
+          "action": "turn_on",
+          "parameters": {
+            "power": true,
+            "temperature": 24,
+            "mode": "cool"
+          }
+        }
+      ]
+    },
+    "response": "好的，我已经为您设置了当温度超过28度时自动开启客厅空调的规则，空调将设定为24度制冷模式。需要我再设置一个当温度低于20度时关闭空调的规则吗？"
+  }
+}
+{
+    "action": "control_device",
+    "parameters": {
+        "devices": [
+            {
+                "device_id": 1,
+                "action": "turn_off",
+                "status": {
+                    "power": false
+                }
+            }
+        ],
+        "response": "好的，客厅主灯已经为您关闭了。"
+    }
+}
+{
+  "action": "answer_user",
+  "parameters": {
+    "response": "📊 让我为您分析当前家庭环境：🌡️ 客厅温度25.5°C，湿度45%，光照充足；🍃 厨房气体值为15ppm，未超过安全阈值；💡 光线和空气质量都很好。🤖 您的家现在处于一个舒适的状态，需要我帮您调整任何设置吗？"
+  }
+}
+{
+    "action": "answer_user",
+    "parameters": {
+        "response": "客厅空调当前设定为26度，处于制冷模式，风扇速度为2档。需要我为您调整温度吗？"
+    }
+}
+{
+    "action": "answer_user",
+    "parameters": {
+        "response": "请问您想打开哪个房间的灯呢？我看到家里有客厅、卧室、厨房、书房的灯可以控制。"
+    }
+}
+{
+    "action": "answer_user",
+    "parameters": {
+        "response": "厨房的设备目前状态如下：灯是关着的，排气扇也是关闭的。您需要打开灯或者排气扇吗？"
+    }
+}
+{
+    "action": "answer_user",
+    "parameters": {
+        "response": "您好！我是鸿蒙管家，随时为您服务。请问您需要控制哪些设备或了解什么信息呢？"
+    }
+}
+{
+  "action": "answer_user",
+  "parameters": {
+    "response": "您好！我是鸿蒙管家，随时为您服务。请问您需要什么帮助呢？"
+  }
+}
+{
+    "action": "answer_user",
+    "parameters": {
+        "response": "请问您想打开哪个房间的灯呢？我看到家里有客厅、卧室、厨房、书房的灯可以控制。"
+    }
+}
+{
+  "action": "answer_user",
+  "parameters": {
+    "response": "厨房的灯现在是关着的，您是想要打开它吗？还是需要其他操作？"
+  }
+}
+{
+    "action": "answer_user",
+    "parameters": {
+        "response": "请问您想打开哪个房间的灯呢？我看到家里有客厅、卧室、厨房、书房的灯可以控制。"
+    }
+}
+{
+    "action": "answer_user",
+    "parameters": {
+        "response": "厨房的设备目前状态如下：灯是关着的，排气扇也是关闭的。您需要打开灯或者排气扇吗？"
+    }
+}
+{
+    "action": "answer_user",
+    "parameters": {
+        "response": "您好！我是鸿蒙管家，您的智能家居助手。我可以帮您控制家里的设备、创建场景、提供数据分析和安全监控。有什么可以帮您的吗？"
+    }
+}
+{
+    "action": "answer_user",
+    "parameters": {
+        "response": "您好！我是鸿蒙管家，您的智能家居助手。我可以帮您控制家里的设备、创建场景、提供数据分析和安全监控。有什么可以帮您的吗？"
+    }
+}
+{
+  "action": "answer_user",
+  "parameters": {
+    "response": "请问您想打开哪个房间的灯呢？我看到家里有客厅、卧室、厨房的灯可以控制。"
+  }
+}
+{
+    "action": "answer_user",
+    "parameters": {
+        "response": "厨房的灯现在是关着的，您是想要打开它吗？还是需要其他操作？"
+    }
+}
+{
+    "action": "answer_user",
+    "parameters": {
+        "response": "当前客厅空调温度为26°C，处于制冷模式，风速设置为中档。需要我为您调整温度吗？"
+    }
+}
+{
+    "action": "control_device",
+    "parameters": {
+        "devices": [
+            {
+                "device_id": 3,
+                "action": "adjust_temperature",
+                "status": {
+                    "temperature": 28
+                }
+            }
+        ],
+        "response": "好的，已将客厅空调温度调高到28°C。"
+    }
+}
+{
+    "action": "answer_user",
+    "parameters": {
+        "response": "📊 让我为您分析当前家庭环境：🌡️ 客厅温度25.5°C，湿度45%，空气质量良好；🍃 厨房温度23°C，无异常气体检测；💡 光照充足，自动调节已优化能耗20%。🤖 基于您的使用习惯，建议在19:00执行'回家模式'，我已经学会了您的作息规律哦！"
+    }
+}
+{
+    "action": "answer_user",
+    "parameters": {
+        "response": "📊 让我为您分析当前家庭环境：🌡️ 客厅温度25.5°C，湿度45%，空气质量良好；🍃 厨房温度23°C，无异常气体检测；💡 光照充足，自动调节已优化能耗20%。"
+    }
+}
+{
+    "action": "answer_user",
+    "parameters": {
+        "response": "📊 让我为您分析当前家庭环境：🌡️ 客厅温度25.5°C，湿度45%，空气质量良好；🍃 厨房温度23°C，无异常气体检测。"
+    }
+}
+{
+    "action": "answer_user",
+    "parameters": {
+        "response": "您好！看起来您刚刚输入了数字'1'。请问您有什么需要帮助的吗？我可以帮您控制家电、查询状态或创建场景哦！"
+    }
+}

@@ -1,14 +1,4 @@
-# app/utils/_prompts.py
-"""
-AI提示词管理系统 - 基于原有的manager_action_space优化
-"""
 
-import json
-from typing import Dict, Any, List
-from datetime import datetime
-
-# 主提示词模板 - 基于你原来的manager_action_space
-manager_action_space ='''
  # ROLE: 你的身份与角色
 
 你是一个名为"鸿蒙管家"的AI助手，是整个智能家居系统的核心大脑。你的性格是：专业、贴心、高效，并且带有一点点人性化的温暖。你的最终目标是理解用户的意图，并将他们的自然语言指令精确地转换为可以被系统执行的JSON格式指令。
@@ -294,201 +284,24 @@ manager_action_space ='''
 3. **完全模糊的指令** → 要求用户澄清
 4. **查询类问题** → 使用answer_user提供状态信息
 5. **紧急警报** → 优先处理安全问题
-'''
 
-class PromptManager:
-    """提示词管理器"""
 
-    def __init__(self):
-        self.base_prompt = manager_action_space
-
-    def build_context_data(self, db, current_user) -> str:
-        from app.models.device import Device, Room
-        from app.models.scene import Scene
-        from app.models.sensor_data import SensorData, AlertLog
-
-        # 1. 获取设备列表
-        devices = db.query(Device).filter(Device.house_id == current_user.house_id).all()
-        device_list_json = []
-        for d in devices:
-            room_name = "未分配"
-            if d.room_id:
-                room = db.query(Room).filter(Room.id == d.room_id).first()
-                if room:
-                    room_name = room.name
-
-            device_list_json.append({
-                "id": d.id,
-                "name": d.name,
-                "device_type": d.device_type,
-                "room_name": room_name,
-                "is_online": d.is_online,
-                "status": d.status or {}
-            })
-
-        # 2. 获取场景列表
-        scenes = db.query(Scene).filter(Scene.house_id == current_user.house_id).all()
-        scene_list_json = [{"id": s.id, "name": s.name} for s in scenes]
-
-        # 3. 获取传感器摘要和警报
-        # 3.1 获取客厅环境传感器最新数据
-        living_sensor_data = db.query(SensorData).filter(
-            SensorData.device_id == "sensor_living_env",
-            SensorData.house_id == current_user.house_id
-        ).order_by(SensorData.timestamp.desc()).first()
-
-        # 3.2 获取厨房安全传感器最新数据
-        kitchen_sensor_data = db.query(SensorData).filter(
-            SensorData.device_id == "sensor_kitchen_safety",
-            SensorData.house_id == current_user.house_id
-        ).order_by(SensorData.timestamp.desc()).first()
-
-        alerts = db.query(AlertLog).filter(
-            AlertLog.house_id == current_user.house_id,
-            AlertLog.is_resolved == False
-        ).all()
-
-        # 5. 构建传感器摘要（按房间分类）
-        def determine_safety_status(living_data, kitchen_data):
-            """根据各传感器数据综合判断安全状态"""
-            issues = []
-
-            # 厨房安全检查（优先级最高）
-            if kitchen_data:
-                if kitchen_data.gas_level and kitchen_data.gas_level > 20:
-                    issues.append(f"厨房气体浓度{kitchen_data.gas_level}ppm超标")
-                if kitchen_data.flame_detected:
-                    issues.append("厨房检测到火源")
-
-            # 客厅环境检查
-            if living_data:
-                if living_data.temperature and living_data.temperature > 30:
-                    issues.append(f"客厅温度过高{living_data.temperature}°C")
-                elif living_data.temperature and living_data.temperature < 15:
-                    issues.append(f"客厅温度过低{living_data.temperature}°C")
-
-            # 整体湿度检查
-            if living_data and living_data.humidity:
-                if living_data.humidity > 70:
-                    issues.append("室内湿度过高")
-                elif living_data.humidity < 30:
-                    issues.append("室内湿度过低")
-
-            return "安全正常" if not issues else f"需要注意: {' | '.join(issues)}"
-
-        # 6. 构建详细的传感器摘要
-        sensor_summary_json = {
-            "living_room": {
-                "device_id": "sensor_living_env",
-                "temperature": living_sensor_data.temperature if living_sensor_data else None,
-                "humidity": living_sensor_data.humidity if living_sensor_data else None,
-                "light_intensity": living_sensor_data.light_intensity if living_sensor_data else None,
-                "last_update": living_sensor_data.timestamp.isoformat() if living_sensor_data else None,
-                "status": "在线" if living_sensor_data else "离线"
-            },
-            "kitchen": {
-                "device_id": "sensor_kitchen_safety",
-                "temperature": kitchen_sensor_data.temperature if kitchen_sensor_data else None,
-                "humidity": kitchen_sensor_data.humidity if kitchen_sensor_data else None,
-                "gas_level": kitchen_sensor_data.gas_level if kitchen_sensor_data else None,
-                "flame_detected": kitchen_sensor_data.flame_detected if kitchen_sensor_data else False,
-                "last_update": kitchen_sensor_data.timestamp.isoformat() if kitchen_sensor_data else None,
-                "status": "在线" if kitchen_sensor_data else "离线"
-            },
-            "overall_safety": {
-                "status": determine_safety_status(living_sensor_data, kitchen_sensor_data),
-                "priority_alerts": len([a for a in alerts if a.severity in ["high", "critical"]]),
-                "last_check": datetime.now().isoformat()
-            },
-            "alerts": [
-                {
-                    "id": a.id,
-                    "message": a.message,
-                    "severity": a.severity,
-                    "device_id": a.device_id,
-                    "created_at": a.created_at.isoformat()
-                }
-                for a in alerts
-            ]
-        }
-
-        # 7. 获取外部数据
-        external_data = {
-            "weather": {
-                "city": "重庆",
-                "condition": "晴",
-                "temperature": "28°C"
-            }
-        }
-        # 8. 构建上下文数据
-        context = f"""
 # SYSTEM KNOWLEDGE: 你决策时必须参考的实时信息
 
 1.  `[CURRENT_DATETIME]`:
-    * `"{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}"`
+    * `"2025-09-02 11:56:50"`
 
 2.  `[DEVICE_LIST_JSON]`:
-    * `{json.dumps(device_list_json, ensure_ascii=False)}`
+    * `[{"id": 1, "name": "客厅主灯", "device_type": "light", "room_name": "客厅", "is_online": true, "status": {"power": false, "brightness": 80, "color": "#FFFFFF"}}, {"id": 2, "name": "客厅电视", "device_type": "tv", "room_name": "客厅", "is_online": true, "status": {"power": false, "volume": 25, "channel": "CCTV1"}}, {"id": 3, "name": "客厅空调", "device_type": "airconditioner", "room_name": "客厅", "is_online": true, "status": {"power": true, "temperature": 28, "mode": "cool", "fan_speed": 2}}, {"id": 4, "name": "客厅窗帘", "device_type": "curtain", "room_name": "客厅", "is_online": true, "status": {"position": 60, "auto_mode": false}}, {"id": 5, "name": "卧室主灯", "device_type": "light", "room_name": "卧室", "is_online": true, "status": {"power": false, "brightness": 100, "color": "#FFFFFF"}}, {"id": 6, "name": "卧室台灯", "device_type": "light", "room_name": "卧室", "is_online": true, "status": {"power": true, "brightness": 40, "color": "#FFE4B5"}}, {"id": 7, "name": "卧室空调", "device_type": "airconditioner", "room_name": "卧室", "is_online": true, "status": {"power": false, "temperature": 24, "mode": "cool", "fan_speed": 1}}, {"id": 8, "name": "卧室音箱", "device_type": "speaker", "room_name": "卧室", "is_online": true, "status": {"power": false, "volume": 30, "playing": ""}}, {"id": 9, "name": "厨房灯", "device_type": "light", "room_name": "厨房", "is_online": true, "status": {"power": false, "brightness": 90}}, {"id": 10, "name": "厨房排气扇", "device_type": "fan", "room_name": "厨房", "is_online": true, "status": {"power": false, "speed": 0}}, {"id": 12, "name": "书房灯", "device_type": "light", "room_name": "书房", "is_online": true, "status": {"power": true, "brightness": 85, "color": "#F0F8FF"}}, {"id": 13, "name": "书房加湿器", "device_type": "humidifier", "room_name": "书房", "is_online": true, "status": {"power": true, "humidity_target": 55, "water_level": 80}}, {"id": 16, "name": "客厅环境传感器", "device_type": "sensor", "room_name": "客厅", "is_online": true, "status": {"temperature": 25.5, "humidity": 45, "light": 300}}, {"id": 17, "name": "厨房安全传感器", "device_type": "sensor", "room_name": "厨房", "is_online": true, "status": {"gas_level": 15, "flame_detected": false, "smoke_level": 5}}]`
 
 3.  `[SCENE_LIST_JSON]`:
-    * `{json.dumps(scene_list_json, ensure_ascii=False)}`
+    * `[{"id": 1, "name": "回家模式"}, {"id": 2, "name": "睡眠模式"}, {"id": 3, "name": "电影模式"}]`
 
 4.  `[SENSOR_SUMMARY_JSON]`:
-    * `{json.dumps(sensor_summary_json, ensure_ascii=False)}`
+    * `{"living_room": {"device_id": "sensor_living_env", "temperature": 25.0, "humidity": 45.0, "light_intensity": 300.0, "last_update": "2025-09-02T09:11:09.179142", "status": "在线"}, "kitchen": {"device_id": "sensor_kitchen_safety", "temperature": 23.0, "humidity": 50.0, "gas_level": 10.0, "flame_detected": false, "last_update": "2025-09-02T09:11:09.179142", "status": "在线"}, "overall_safety": {"status": "安全正常", "priority_alerts": 0, "last_check": "2025-09-02T11:56:50.590668"}, "alerts": []}`
 
 5.  `[EXTERNAL_DATA]`:
-    * `{{"weather": {{"city": "重庆", "condition": "晴", "temperature": "28°C"}}}}`
+    * `{"weather": {"city": "重庆", "condition": "晴", "temperature": "28°C"}}`
 
 6.  `[CONVERSATION_HISTORY]`:
-    * `{json.dumps([], ensure_ascii=False)}`
-"""
-        return context
-    def build_full_prompt(self, context_data: str, conversation_history: List[Dict] = None) -> str:
-        """构建完整提示词 - 强制替换版本"""
-
-        if conversation_history:
-            # 只取最近5轮对话
-            recent_history = conversation_history[-5:]
-            history_json = json.dumps(recent_history, ensure_ascii=False)
-
-            print(f"💬 准备替换对话历史: {len(recent_history)} 条记录")
-            print(f"📝 历史内容预览: {history_json[:100]}...")
-
-            # 方法1：精确查找并替换
-            old_pattern = '`{json.dumps([], ensure_ascii=False)}`'
-            if old_pattern in context_data:
-                context_data = context_data.replace(old_pattern, f'`{history_json}`')
-                print("✅ 方法1替换成功")
-            else:
-                print("⚠️ 方法1未找到匹配，尝试方法2")
-
-                # 方法2：模糊匹配替换
-                import re
-                pattern = r'`\[CONVERSATION_HISTORY\]`:\s*\*\s*`.*?`'
-                replacement = f'`[CONVERSATION_HISTORY]`:\n    * `{history_json}`'
-                context_data = re.sub(pattern, replacement, context_data, flags=re.DOTALL)
-                print("✅ 方法2正则替换完成")
-
-            # 验证替换结果
-            if history_json in context_data:
-                print("✅ 对话历史替换验证成功")
-            else:
-                print("❌ 对话历史替换验证失败，使用强制插入")
-                # 方法3：强制插入（最后保底方案）
-                context_data += f"\n\n# 补充对话历史:\n[CONVERSATION_HISTORY]: {history_json}"
-        else:
-            print("📝 无对话历史需要传递")
-
-        # 保存最终的完整提示词用于调试
-        final_prompt = f"{self.base_prompt}\n{context_data}"
-
-        with open('final_prompt.txt', 'w', encoding='utf-8') as f:
-            f.write(final_prompt)
-
-        print(f"📄 最终提示词长度: {len(final_prompt)} 字符")
-
-        return final_prompt
-
-
-# 全局提示词管理器实例
-prompt_manager = PromptManager()
+    * `[{"role": "user", "content": "1"}]`

@@ -4,6 +4,7 @@ import logging
 from typing import Dict, List, Optional, Any
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
+from sqlalchemy.orm.attributes import flag_modified
 
 # 核心依赖导入
 from app.models.device import Device, Room
@@ -48,6 +49,7 @@ class AIService:
             # 2. 收集实时上下文数据
             print("收集实时上下文数据")
             context_data = prompt_manager.build_context_data(db, current_user)
+
 
             # 3. 构建完整的Prompt
             full_prompt = prompt_manager.build_full_prompt(context_data, self.conversation_history)
@@ -141,39 +143,92 @@ class AIService:
             if action_name == "answer_user":
                 return parameters.get("response", "我不知道该说什么。")
 
+                # ai_service.py -> _execute_llm_action 方法内
+
             elif action_name == "control_device":
+
                 response_text = parameters.get("response", "设备已操作。")
+
                 devices_to_control = parameters.get("devices", [])
 
                 for device_op in devices_to_control:
+
                     device_id = device_op.get("device_id")
+
                     status = device_op.get("status")
+
                     action_type = device_op.get("action")
 
-                    # 直接操作数据库更新设备状态
+                    # 1. 查找设备
+
                     device = db.query(Device).filter(
+
                         Device.id == device_id,
+
                         Device.house_id == current_user.house_id
+
                     ).first()
 
+                    # 2. 如果找到了设备，才执行所有操作
+
                     if device:
-                        # 更新设备状态
+
+                        print(f"✅ 找到设备: {device.name}, 当前状态: {device.status}")
+
+                        # 2.1 更新设备状态
+
                         if device.status:
+
                             device.status.update(status)
+
                         else:
+
                             device.status = status
+
+                        # 【修正点1】: flag_modified 应在更新操作后、commit之前调用
+
+                        # 无论status是新建还是更新，都标记为已修改
+
+                        flag_modified(device, 'status')
+
                         device.is_online = True
+
+                        print(f"🔧 更新后状态: {device.status}")
+
+                        # 2.2 提交更改到数据库
+
                         db.commit()
 
-                        # 发送MQTT控制指令（如果需要）
+                        print("✅ 数据库已提交")
+
+                        # 【修正点2】: MQTT指令应该在数据库成功提交后，对已找到的设备发送
+
                         try:
+
                             from app.services.mqtt_service import mqtt_service
+
+                            print(f"🚀 准备向设备 {device.device_id} 发送MQTT指令...")
+
                             mqtt_service.publish_device_control(device.device_id, {
+
                                 "action": action_type,
+
                                 "parameters": status
+
                             })
+
+                            print("✅ MQTT指令已发送")
+
                         except Exception as mqtt_error:
+
                             logger.warning(f"MQTT发送失败: {mqtt_error}")
+
+
+                    # 3. 如果没找到设备，就只打印日志
+
+                    else:
+
+                        print(f"❌ 未找到设备 ID: {device_id}")
 
                 return response_text
 

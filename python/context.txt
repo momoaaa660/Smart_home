@@ -2,16 +2,16 @@
 # SYSTEM KNOWLEDGE: 你决策时必须参考的实时信息
 
 1.  `[CURRENT_DATETIME]`:
-    * `"2025-09-01 17:27:21"`
+    * `"2025-09-02 10:17:46"`
 
 2.  `[DEVICE_LIST_JSON]`:
-    * `[{"id": 1, "name": "客厅主灯", "device_type": "light", "room_name": "客厅", "is_online": true, "status": {"power": true, "brightness": 80}}, {"id": 2, "name": "卧室台灯", "device_type": "light", "room_name": "卧室", "is_online": true, "status": {"power": false}}, {"id": 3, "name": "厨房照明", "device_type": "light", "room_name": "厨房", "is_online": true, "status": {"power": false, "brightness": 90}}, {"id": 4, "name": "客厅空调", "device_type": "airconditioner", "room_name": "客厅", "is_online": true, "status": {"power": true, "temperature": 25, "mode": "cool"}}, {"id": 5, "name": "厨房油烟机", "device_type": "fan", "room_name": "厨房", "is_online": true, "status": {"power": false, "speed": 1}}, {"id": 6, "name": "阳台自动浇水器", "device_type": "pump", "room_name": "阳台", "is_online": true, "status": {"power": false, "flow_rate": 50}}, {"id": 7, "name": "客厅环境传感器", "device_type": "sensor", "room_name": "客厅", "is_online": true, "status": {"online": true, "battery": 85}}, {"id": 8, "name": "厨房烟雾传感器", "device_type": "sensor", "room_name": "厨房", "is_online": true, "status": {"online": true, "battery": 92}}, {"id": 9, "name": "阳台植物传感器", "device_type": "sensor", "room_name": "阳台", "is_online": true, "status": {"online": true, "battery": 78}}]`
+    * `[{"id": 1, "name": "客厅主灯", "device_type": "light", "room_name": "客厅", "is_online": true, "status": {"power": false, "brightness": 80, "color": "#FFFFFF"}}, {"id": 2, "name": "客厅电视", "device_type": "tv", "room_name": "客厅", "is_online": true, "status": {"power": false, "volume": 25, "channel": "CCTV1"}}, {"id": 3, "name": "客厅空调", "device_type": "airconditioner", "room_name": "客厅", "is_online": true, "status": {"power": true, "temperature": 26, "mode": "cool", "fan_speed": 2}}, {"id": 4, "name": "客厅窗帘", "device_type": "curtain", "room_name": "客厅", "is_online": true, "status": {"position": 60, "auto_mode": false}}, {"id": 5, "name": "卧室主灯", "device_type": "light", "room_name": "卧室", "is_online": true, "status": {"power": false, "brightness": 100, "color": "#FFFFFF"}}, {"id": 6, "name": "卧室台灯", "device_type": "light", "room_name": "卧室", "is_online": true, "status": {"power": true, "brightness": 40, "color": "#FFE4B5"}}, {"id": 7, "name": "卧室空调", "device_type": "airconditioner", "room_name": "卧室", "is_online": true, "status": {"power": false, "temperature": 24, "mode": "cool", "fan_speed": 1}}, {"id": 8, "name": "卧室音箱", "device_type": "speaker", "room_name": "卧室", "is_online": true, "status": {"power": false, "volume": 30, "playing": ""}}, {"id": 9, "name": "厨房灯", "device_type": "light", "room_name": "厨房", "is_online": true, "status": {"power": false, "brightness": 90}}, {"id": 10, "name": "厨房排气扇", "device_type": "fan", "room_name": "厨房", "is_online": true, "status": {"power": false, "speed": 0}}, {"id": 12, "name": "书房灯", "device_type": "light", "room_name": "书房", "is_online": true, "status": {"power": true, "brightness": 85, "color": "#F0F8FF"}}, {"id": 13, "name": "书房加湿器", "device_type": "humidifier", "room_name": "书房", "is_online": true, "status": {"power": true, "humidity_target": 55, "water_level": 80}}, {"id": 16, "name": "客厅环境传感器", "device_type": "sensor", "room_name": "客厅", "is_online": true, "status": {"temperature": 25.5, "humidity": 45, "light": 300}}, {"id": 17, "name": "厨房安全传感器", "device_type": "sensor", "room_name": "厨房", "is_online": true, "status": {"gas_level": 15, "flame_detected": false, "smoke_level": 5}}]`
 
 3.  `[SCENE_LIST_JSON]`:
-    * `[{"id": 1, "name": "回家模式"}, {"id": 2, "name": "睡眠模式"}]`
+    * `[{"id": 1, "name": "回家模式"}, {"id": 2, "name": "睡眠模式"}, {"id": 3, "name": "电影模式"}]`
 
 4.  `[SENSOR_SUMMARY_JSON]`:
-    * `{"summary": {"gas_level": 500, "temperature": null, "humidity": null, "safety_status": "气体值超标"}, "alerts": []}`
+    * `{"summary": {"gas_level": 500, "temperature": 25.0, "humidity": 45.0, "safety_status": "气体值超标"}, "alerts": []}`
 
 5.  `[EXTERNAL_DATA]`:
     * `{"weather": {"city": "重庆", "condition": "晴", "temperature": "28°C"}}`

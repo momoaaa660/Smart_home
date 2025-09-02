@@ -312,7 +312,7 @@ def main():
     # 登录
     if not tester.login():
         print("\n❌ 登录失败，请检查:")
-        print("1. 是否运行了 python init_data.py 初始化数据")
+        print("1. 是否运行了 python init_demo_data.py 初始化数据")
         print("2. 数据库是否正常")
         return
 

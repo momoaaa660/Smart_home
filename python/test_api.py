@@ -157,7 +157,7 @@ def main():
     token = test_user_login()
     if not token:
         print("\n💡 登录失败，请检查:")
-        print("   1. 是否运行了 python init_data.py")
+        print("   1. 是否运行了 python init_demo_data.py")
         print("   2. 数据库是否正确初始化")
         return
 
