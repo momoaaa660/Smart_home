@@ -1,6 +1,10 @@
 <template>
 	<!-- 页面根容器 -->
 	<view class="container">
+		<!-- 背景图片和遮罩 -->
+		<image class="bg" src="../../static/img/home_bg.png" mode="aspectFill"></image>
+		<view class="overlay"></view>
+		
 		<!-- 自定义声明组件，通过ref引用为"dialog" -->
 		<statement ref="dialog"></statement>
 		
@@ -58,7 +62,9 @@
 			</view>
 
 			<!-- 加载指示器组件，根据showLoading状态显示/隐藏 -->
-			<u-loading-icon text="响应中，请稍后..." textSize="16" :show="showLoading && !showTimeoutError && !showConnectionError"></u-loading-icon>
+			<view v-if="showLoading && !showTimeoutError && !showConnectionError" class="loading-container">
+				<u-loading-icon text="响应中，请稍后..." textSize="16" :show="true"></u-loading-icon>
+			</view>
 			
 			<!-- 超时错误提示 -->
 			<view v-if="showTimeoutError" class="error_message">
@@ -73,8 +79,9 @@
 		
 		<!-- 底部输入区域 -->
 		<view class="input_tab">
-			<!-- 服务说明 -->
+			<!-- 服务说明 - 移到输入框上方 -->
 			<view class="statement">智能家居服务<text @tap="exemptStatement">使用说明</text></view>
+			
 			<!-- 输入组件区域 -->
 			<view class="input_com">
 				<!-- 左侧输入区域 -->
@@ -194,6 +201,11 @@
 			this.currentDate = (myDate.getHours() + '').padStart(2, '0') + ':' + (myDate.getMinutes() + '').padStart(2, '0');
 			// 初始化WebSocket连接
 			this.initSocket();
+			
+			// 初始滚动到底部
+			this.$nextTick(() => {
+				this.scrollToBottom();
+			});
 		},
 		// 页面卸载前关闭WebSocket连接
 		beforeUnmount() {
@@ -203,20 +215,42 @@
 		},
 		// 定义组件方法
 		methods: {
-			// 自动滚动到页面底部
+			// 自动滚动到页面底部 - 修改为适配绝对定位的聊天区域
 			scrollToBottom() {
 				this.$nextTick(() => {
-					// 获取聊天区域的高度
+					// 获取聊天区域DOM元素并滚动到底部
 					const query = uni.createSelectorQuery().in(this);
-					query.select('#test').boundingClientRect(data => {
-						if (data) {
-							// 滚动到聊天区域底部
-							uni.pageScrollTo({
-								scrollTop: data.height + data.top,
-								duration: 300 // 平滑滚动动画时长
-							});
+					query.select('.chat_area').boundingClientRect().exec((res) => {
+						if (res[0]) {
+							// 使用scrollIntoView滚动到聊天区域底部
+							setTimeout(() => {
+								try {
+									const chatArea = document.querySelector('.chat_area');
+									if (chatArea) {
+										chatArea.scrollTop = chatArea.scrollHeight;
+									}
+								} catch (e) {
+									// 非web环境的兼容处理
+									uni.createSelectorQuery()
+										.select('.chat_area')
+										.scrollOffset()
+										.exec((res) => {
+											if (res[0]) {
+												const scrollTop = res[0].scrollHeight - res[0].clientHeight;
+												if (scrollTop > 0) {
+													// 使用uni.pageScrollTo在非web环境中滚动
+													uni.pageScrollTo({
+														scrollTop: scrollTop,
+														duration: 300,
+														selector: '.chat_area'
+													});
+												}
+											}
+										});
+								}
+							}, 100);
 						}
-					}).exec();
+					});
 				});
 			},
 			
@@ -320,6 +354,11 @@
 					this.showTimeoutError = true;
 					console.log('服务器响应超时');
 					
+					// 滚动确保超时错误信息可见
+					this.$nextTick(() => {
+						this.scrollToBottom();
+					});
+					
 					// 3秒后自动隐藏错误信息
 					setTimeout(() => {
 						this.showTimeoutError = false;
@@ -359,6 +398,11 @@
 				this.chatList.push(assistantMessage);
 				this.messages.push(assistantMessage);
 
+				// 立即滚动到底部显示用户消息和"响应中"状态
+				this.$nextTick(() => {
+					this.scrollToBottom();
+				});
+
 				this.socketTask.send({
 					data: JSON.stringify({
 						message: val,
@@ -394,69 +438,90 @@
 	};
 </script>
 
-<!-- 声明使用SCSS（Sass）预处理器编写样式 -->
 <style lang="scss" scoped>
-	// 定义容器类，设置内边距为28rpx（rpx是响应式单位，会根据屏幕宽度自适应）
+	// 容器样式 - 使用绝对定位避免滚动问题
 	.container {
-		padding: 28rpx;
-		background-color: #ffffff; // 白色背景
-		min-height: 100vh;
-		// 预留底部导航栏高度（50px = 100rpx），避免输入栏被遮挡
-		padding-bottom: 120rpx;
-	}
-
-	// 定义导航栏样式：
-	.nav {
-		height: 80rpx;
-		width: 100%;
-		background-color: #ffffff;
-		display: flex;
-		align-items: center;
 		position: fixed;
 		top: 0;
 		left: 0;
-		z-index: 999;
-
-		// 导航栏内图片样式
-		image {
-			margin: 0 20rpx;
-			width: 40rpx;
-			height: 40rpx;
-
-		}
-
-		// 导航栏内文字样式
-		text {
-			color: #838383;
-			font-size: 40rpx;
-		}
+		width: 100vw;
+		height: 100vh;
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
 	}
 
-	// 定义聊天区域样式
+	// 背景图片 - 固定背景，不随页面滚动
+	.bg {
+		position: fixed;
+		width: 100vw;
+		height: 100vh;
+		object-fit: cover;
+		object-position: center;
+		z-index: 1;
+		top: 0;
+		left: 0;
+	}
+
+	// 遮罩层 - 固定遮罩
+	.overlay {
+		position: fixed;
+		width: 100vw;
+		height: 100vh;
+		background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.6));
+		z-index: 2;
+		top: 0;
+		left: 0;
+	}
+
+	// 聊天区域样式 - 修改为绝对定位，底部距离280rpx
 	.chat_area {
-		padding-bottom: 200rpx;
-		// 设置白色背景
-		background-color: #ffffff;
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 220rpx; // 设置底部距离为280rpx
+		z-index: 3;
+		padding: 40rpx 28rpx 40rpx 28rpx; // 调整底部padding，避免内容贴边
+		overflow-y: auto;
+		overflow-x: hidden; // 防止横向滚动
+		
+		// 滚动条样式优化（仅在支持的浏览器中生效）
+		&::-webkit-scrollbar {
+			width: 4rpx;
+		}
+		
+		&::-webkit-scrollbar-track {
+			background: rgba(255, 255, 255, 0.1);
+			border-radius: 2rpx;
+		}
+		
+		&::-webkit-scrollbar-thumb {
+			background: rgba(255, 255, 255, 0.3);
+			border-radius: 2rpx;
+		}
+		
+		&::-webkit-scrollbar-thumb:hover {
+			background: rgba(255, 255, 255, 0.5);
+		}
 		
 		// 当前时间显示样式
 		.current_time {
 			display: flex;
 			justify-content: center;
 			font-size: 12px;
-			color: #666666;
+			color: rgba(255, 255, 255, 0.8);
 			margin: 20rpx 0;
 		}
 
-		// 左侧和右侧消息框的共同样式 - 移除头像后调整布局
+		// 左侧和右侧消息框的共同样式
 		.left_box,
 		.right_box {
 			display: flex;
-			margin: 20rpx 16rpx; // 减半对话框四周留白
-			// 移除最大宽度限制，让内容自适应
+			margin: 20rpx 16rpx;
 
-			// 消息内容框样式 - 参考图片中的圆润气泡设计，无边框
+			// 消息内容框样式 - 使用毛玻璃效果
 			.content_box {
-				// 根据内容自适应宽度，但设置合理的最大宽度
 				max-width: 80%;
 				min-width: 80rpx;
 				width: fit-content;
@@ -464,50 +529,44 @@
 				overflow-wrap: break-word;
 
 				.content {
-					// 增加内边距，让文字不紧贴对话框边缘
 					padding: 32rpx 40rpx;
-					// 移除边框和阴影，保持简洁
-					border: none;
-					box-shadow: none;
+					border-radius: 30rpx;
+					box-shadow: 0 15rpx 40rpx rgba(0, 0, 0, 0.2);
+					backdrop-filter: blur(20rpx);
 					
-					// 字体样式调整 - 自定义字体粗细，固定行高
+					// 字体样式调整
 					font-size: 16px !important;
-					font-weight: 540 !important; // 调整为540
-					line-height: 24px !important; // 固定行高为24px
-					color: #333333;
-					// 禁用任何可能导致字号变化的属性
+					font-weight: 540 !important;
+					line-height: 24px !important;
 					-webkit-text-size-adjust: none !important;
 					text-size-adjust: none !important;
 					zoom: 1 !important;
 					transform: none !important;
 					margin: 0;
 
-					// 请求帖子样式
+					// 请求帖子样式 - 去除示例问题的背景
 					.post_request {
 						color: #666666;
 						display: flex;
 						flex-direction: column;
 						margin: 0;
 						
-						// 每个可点击问题项的样式
 						view {
-							margin: 6rpx 0; // 稍微增加间距
-							padding: 12rpx 20rpx; // 增加内边距
+							margin: 6rpx 0;
+							padding: 12rpx 20rpx;
 							border-radius: 16rpx;
+							background: transparent;
 							
-							// 可点击文字的样式
 							.active {
 								color: #007AFF;
 								cursor: pointer;
-								font-weight: 540 !important; // 保持自定义字体粗细
-								line-height: 24px !important; // 固定行高
-								// 鼠标悬停效果
+								font-weight: 540 !important;
+								line-height: 24px !important;
+								
 								&:hover {
 									background-color: rgba(0, 122, 255, 0.1);
-									color: #0056CC;
 								}
 								
-								// 活动状态样式（按下时）
 								&:active {
 									background-color: rgba(0, 122, 255, 0.2);
 									opacity: 0.8;
@@ -565,18 +624,20 @@
 			}
 		}
 		
-		// 左侧消息框（机器人）
+		// 左侧消息框（机器人） - 使用更清亮的毛玻璃效果
 		.left_box {
 			justify-content: flex-start;
 			
 			.content_box {
-				background-color: #e5e5ea !important;
-				color: #000000 !important;
+				background: rgba(255, 255, 255, 0.85) !important;
+				color: #333333 !important;
 				border-radius: 44rpx 44rpx 44rpx 8rpx !important;
+				border: 1rpx solid rgba(255, 255, 255, 0.5);
+				backdrop-filter: blur(15rpx);
 			}
 		}
 		
-		// 右侧消息框（用户）
+		// 右侧消息框（用户） - 仿照机器人对话框调整
 		.right_box {
 			justify-content: flex-end;
 			
@@ -585,6 +646,8 @@
 				color: #ffffff !important;
 				margin-left: auto;
 				border-radius: 44rpx 44rpx 8rpx 44rpx !important;
+				border: 1rpx solid rgba(255, 255, 255, 0.5);
+				backdrop-filter: blur(15rpx);
 				
 				.content {
 					color: #ffffff !important;
@@ -595,70 +658,67 @@
 				}
 			}
 		}
-		
-		// 屏幕适配
-		@media (min-width: 720px) and (max-width: 1199px) {
-			.left_box .content_box, 
-			.right_box .content_box {
-				max-width: 60%;
-			}
-			.left_box,
-			.right_box {
-				margin: 20rpx 24rpx;
-			}
-		}
-		
-		@media (min-width: 1200px) {
-			.left_box .content_box, 
-			.right_box .content_box {
-				max-width: 50%;
-			}
-			.left_box,
-			.right_box {
-				margin: 20rpx 32rpx;
-			}
-		}
 	}
 
-	// 错误信息提示样式
+	// 加载提示容器样式
+	.loading-container {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		padding: 20rpx 0;
+		margin: 20rpx 0;
+		flex-shrink: 0; // 防止被压缩
+	}
+
+	// 错误信息提示样式 - 确保在聊天区域内显示
 	.error_message {
 		display: flex;
 		justify-content: center;
 		align-items: center;
 		padding: 20rpx;
-		margin: 20rpx;
-		background-color: #fff2f0;
-		border: 1rpx solid #ffccc7;
+		margin: 20rpx 0; // 改为上下边距，避免左右边距影响布局
+		background: rgba(255, 242, 240, 0.9);
+		border: 1rpx solid rgba(255, 204, 199, 0.8);
 		border-radius: 16rpx;
+		backdrop-filter: blur(10rpx);
+		max-width: 100%; // 确保不超出聊天区域
+		box-sizing: border-box;
+		flex-shrink: 0; // 防止被压缩
 		
 		text {
 			color: #ff4d4f;
 			font-size: 14px;
+			text-align: center;
 		}
 	}
 
-	// 底部输入栏样式
+	// 底部输入栏样式 - 调整布局顺序
 	.input_tab {
-		background-color: #ffffff;
-		width: 100%;
-		position: fixed;
-		bottom: 100rpx; // 距离底部100rpx，避免被导航栏遮挡
+		position: absolute;
+		bottom: 80rpx;
 		left: 0;
+		right: 0;
+		height: 240rpx;
+		z-index: 10;
+		background: transparent;
 		display: flex;
 		flex-direction: column;
-		padding: 16rpx 0;
+		justify-content: flex-end; // 改为底部对齐
+		padding: 20rpx 0;
+		box-sizing: border-box;
 	}
 
-	// 声明文字样式
+	// 声明文字样式 - 调整边距，现在在输入框上方
 	.statement {
-		margin: 0 auto 12rpx auto;
+		margin: 0 auto 0rpx auto; // 调整边距，底部留给输入框空间
 		font-size: 12px;
-		color: #999999;
+		color: rgba(255, 255, 255, 0.8);
 		text-align: center;
 
 		text {
-			color: #007AFF;
+			color: #FFFFFF;
 			text-decoration: underline;
+			font-weight: 500;
 		}
 	}
 	
@@ -669,13 +729,14 @@
 		padding: 16rpx 30rpx;
 		gap: 16rpx;
 
-		// 左侧输入区域样式
+		// 左侧输入区域样式 - 使用毛玻璃效果
 		.left {
 			flex: 1;
-			border: 2rpx solid #e0e0e0;
+			border: 2rpx solid rgba(255, 255, 255, 0.3);
 			display: flex;
 			align-items: center;
-			background-color: #ffffff;
+			background: rgba(255, 255, 255, 0.15);
+			backdrop-filter: blur(10rpx);
 			border-radius: 48rpx;
 			padding: 0 8rpx;
 			min-height: 80rpx;
@@ -685,7 +746,7 @@
 				width: 32rpx;
 				height: 32rpx;
 				margin: 0 24rpx;
-				opacity: 0.6;
+				opacity: 0.8;
 			}
 			
 			// 输入框样式
@@ -696,6 +757,11 @@
 				border: none;
 				outline: none;
 				padding: 20rpx 0;
+				color: #FFFFFF;
+				
+				&::placeholder {
+					color: rgba(255, 255, 255, 0.7);
+				}
 			}
 		}
 		
@@ -714,7 +780,7 @@
 			justify-content: center;
 			font-size: 14px;
 			font-weight: 500;
-			box-shadow: none;
+			box-shadow: 0 15rpx 40rpx rgba(0, 0, 0, 0.2);
 			
 			&:active {
 				transform: scale(0.95);
